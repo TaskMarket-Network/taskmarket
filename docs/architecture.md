@@ -1,13 +1,14 @@
 # TaskMarket Architecture
 
-> Status: **Verified design, not yet implemented.** This document is the
+> Status: **Verified design, partially implemented.** This document is the
 > concrete system architecture derived from the verified technical research in
 > [docs/research/goat-technical-research.md](research/goat-technical-research.md)
 > (research date 2026-08-18). Everything described here is **planned**; no
 > marketplace, agent, payment, identity, or reputation functionality exists yet.
 > Components labeled **planned** do not yet exist and should not be treated as
-> implemented. This document will be updated as each implementation phase
-> completes. Individual decisions are recorded as ADRs in
+> implemented. Implemented components are labeled **implemented**. This
+> document will be updated as each implementation phase completes. Individual
+> decisions are recorded as ADRs in
 > [docs/adr/](adr/).
 
 ## 1. Goals and non-goals
@@ -169,6 +170,12 @@ and [§9](#9-failure-and-security-paths)).
 - TaskMarket-hosted reference agents run on the **AgentKit runtime**
   (`ExecutionRuntime` + `PolicyEngine`) so every action is policy-gated,
   idempotent, retryable, and observable.
+- The shared integration lives in **`packages/agent-kit` (implemented,
+  Phase 1)**: it owns AgentKit configuration (env-driven, Zod-validated,
+  testnet-safe defaults) and initialization (`ActionProvider`, `PolicyEngine`,
+  `ExecutionRuntime`) behind a clean internal interface. It registers base
+  read-only wallet actions only; wallet providers, payments, and identity are
+  added by later tasks.
 - The execution core is **framework-agnostic**: AgentKit `ActionProvider`
   exports tools to multiple AI frameworks. The first reference agent uses the
   **Vercel AI SDK** and exposes its services over **MCP**
@@ -400,17 +407,17 @@ The workspace is organized to match these boundaries (no code exists yet):
 ```
 taskmarket/
 ├── apps/
-│   ├── web/          # Frontend (Next.js)                      [4.1]
-│   └── api/          # Marketplace Core API (Fastify)          [4.2]
+│   ├── web/          # Frontend (Next.js)                      [4.1]  planned
+│   └── api/          # Marketplace Core API (Fastify)          [4.2]  planned
 ├── packages/
-│   ├── core/         # Domain logic, types, errors             [4.2]
-│   ├── task-engine/  # Task lifecycle                          [4.3]
-│   ├── catalog/      # Agent catalog + search                  [4.7]
-│   ├── adapters/     # Protocol adapters (payment, identity)   [4.5, 4.6, 4.7]
-│   ├── agent-kit/    # Shared AgentKit integration helpers     [4.4]
-│   └── observability/# logging, metrics, audit                 [4.10]
+│   ├── core/         # Domain logic, types, errors             [4.2]  planned
+│   ├── task-engine/  # Task lifecycle                          [4.3]  planned
+│   ├── catalog/      # Agent catalog + search                  [4.7]  planned
+│   ├── adapters/     # Protocol adapters (payment, identity)   [4.5, 4.6, 4.7]  planned
+│   ├── agent-kit/    # Shared AgentKit integration helpers     [4.4]  implemented
+│   └── observability/# logging, metrics, audit                 [4.10] planned
 ├── agents/
-│   └── reference/    # First TaskMarket-hosted reference agent [4.4]
+│   └── reference/    # First TaskMarket-hosted reference agent [4.4]  planned
 ├── docs/
 │   ├── architecture.md
 │   ├── adr/          # Architecture decision records

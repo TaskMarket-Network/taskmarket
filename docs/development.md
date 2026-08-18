@@ -45,10 +45,10 @@ Local `.env` files are git-ignored; never commit real secrets.
 - `pnpm preflight` refuses `NODE_ENV=production` and flags anything that looks
   like a private key in `.env`.
 - `pnpm check:env` runs the same validation standalone.
-- GOAT Network variables (RPC URLs, wallet/key configuration, GOAT Flow
-  merchant endpoints) are added in the phase that introduces GOAT AgentKit
-  integration. Until then, the foundation requires no runtime environment
-  variables.
+- GOAT Network RPC/wallet variables are added in the GOAT testnet connectivity
+  phase. The `@taskmarket/agent-kit` package (Phase 1) already reads the
+  documented `AGENTKIT_*` variables from `.env` for idempotency, metrics, and
+  policy configuration; the safe local defaults are in `.env.example`.
 
 ## Local database stack
 
@@ -85,12 +85,32 @@ exits non-zero and prints `pnpm db:up` as the remedy.
 `pnpm check` runs formatting checks, linting, type checking, and tests in
 sequence. It does not require the database stack.
 
+## GOAT AgentKit integration (`@taskmarket/agent-kit`)
+
+Phase 1 introduces `packages/agent-kit`, TaskMarket's isolated GOAT AgentKit
+integration. It owns AgentKit configuration and initialization behind a clean
+internal interface (see the package README for the full API):
+
+- `loadAgentKitConfig(env)` / `resolveAgentKitConfig(input)` — parse and
+  validate the documented `AGENTKIT_*` environment variables (idempotency
+  mode, Redis URL, metrics port, allowed networks, policy risk ceiling, write
+  permissions) with Zod, falling back to safe testnet-only defaults. Invalid
+  values throw a structured `AgentKitConfigError`.
+- `createAgentKit(config)` — build the `ActionProvider` (base read-only wallet
+  actions), `PolicyEngine`, and `ExecutionRuntime` in one call.
+
+The integration defaults to `goat-testnet` only, `maxRiskWithoutConfirm: low`,
+and in-memory idempotency. Redis idempotency is supported by configuration but
+requires an injected `IdempotencyStore`; the local Redis stack is wired up in
+the phase that introduces the data-store layer.
+
 ## Project structure
 
 ```
 taskmarket/
 ├── apps/        # Planned: frontend / backend application deployments
-├── packages/    # Planned: reusable libraries shared across apps and agents
+├── packages/
+│   └── agent-kit/ # GOAT AgentKit integration (config, policy, runtime)
 ├── agents/      # Planned: TaskMarket's own agent implementations
 ├── docs/        # Architecture, ADRs, and engineering documentation
 ├── scripts/     # Repository utility scripts

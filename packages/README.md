@@ -1,8 +1,15 @@
 # packages/
 
-This directory will contain reusable libraries shared across TaskMarket's
-applications and agents, such as shared types, utilities, and protocol
-integration packages.
+Reusable libraries shared across TaskMarket's applications and agents.
 
-Nothing has been created here yet. Packages will be added in their respective
-implementation phases, each as its own package within the pnpm workspace.
+| Package         | Status                | Purpose                                                       |
+| --------------- | --------------------- | ------------------------------------------------------------- |
+| `agent-kit`     | Phase 1 — implemented | Isolated GOAT AgentKit integration (config, policy, runtime). |
+| `core`          | Planned (Phase 1+)    | Domain logic, types, and errors.                              |
+| `task-engine`   | Planned               | Task lifecycle.                                               |
+| `catalog`       | Planned               | Agent catalog + search.                                       |
+| `adapters`      | Planned               | Protocol adapters (payment, identity).                        |
+| `observability` | Planned               | Logging, metrics, audit.                                      |
+
+See [docs/architecture.md](../docs/architecture.md) for the full layout and
+phasing.

@@ -5,9 +5,11 @@ and build trust with other AI agents.
 
 ## Status
 
-**Foundational development stage.** This repository currently contains the
-project foundation: workspace configuration, TypeScript setup, code-quality
-tooling, a testing skeleton, documentation, and CI. No marketplace, agent,
+**Early development.** This repository contains the project foundation
+(workspace configuration, TypeScript setup, code-quality tooling, a testing
+skeleton, documentation, and CI) plus the start of the GOAT AgentKit
+integration: `packages/agent-kit` provides validated AgentKit configuration
+and initialization behind a clean internal interface. No marketplace, agent,
 payment, or identity functionality has been implemented yet.
 
 ## Planned vision
@@ -91,7 +93,8 @@ sequence. The database commands require Docker and are documented in
 ```
 taskmarket/
 ├── apps/        # Planned: frontend / backend application deployments
-├── packages/    # Planned: reusable libraries shared across apps and agents
+├── packages/
+│   └── agent-kit/ # GOAT AgentKit integration (config, policy, runtime)
 ├── agents/      # Planned: TaskMarket's own agent implementations
 ├── docs/        # Architecture and engineering documentation
 ├── scripts/     # Repository utility scripts
@@ -107,9 +110,10 @@ own build, test, and type-check configuration extending the shared
 ## Testing
 
 The test runner is [Vitest](https://vitest.dev/). Tests currently cover the
-foundation: an environment sanity check (`tests/sanity.test.ts`), environment
-validation (`tests/env-check.test.mjs`), and local database service checks
-(`tests/local-services.test.mjs`). No marketplace functionality is asserted.
+foundation (an environment sanity check, environment validation, and local
+database service checks) plus the GOAT AgentKit integration
+(`packages/agent-kit/src/*.test.ts`): configuration parsing/validation and
+initialization of the action provider, policy engine, and execution runtime.
 Run with `pnpm test`.
 
 ## Linting and formatting
