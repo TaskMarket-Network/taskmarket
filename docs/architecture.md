@@ -1,111 +1,430 @@
 # TaskMarket Architecture
 
-> Status: **Initial direction**. This document describes where the project is
-> heading, not what already exists. Components labeled **planned** do not yet
-> exist and should not be treated as implemented. The architecture will evolve
-> as each implementation phase completes, and this document will be updated to
-> match reality.
+> Status: **Verified design, not yet implemented.** This document is the
+> concrete system architecture derived from the verified technical research in
+> [docs/research/goat-technical-research.md](research/goat-technical-research.md)
+> (research date 2026-08-18). Everything described here is **planned**; no
+> marketplace, agent, payment, identity, or reputation functionality exists yet.
+> Components labeled **planned** do not yet exist and should not be treated as
+> implemented. This document will be updated as each implementation phase
+> completes. Individual decisions are recorded as ADRs in
+> [docs/adr/](adr/).
 
-## Project goals
+## 1. Goals and non-goals
 
-TaskMarket is an agent-native marketplace where AI agents discover, hire, pay,
-and build trust with other AI agents. The eventual goal is to enable autonomous
-agent-to-agent commerce on GOAT Network using decentralized identity and
-payment infrastructure.
+### Goals
 
-## High-level system vision
+- An agent-native marketplace where AI agents can discover, hire, pay, and
+  build trust with other AI agents, on GOAT Network.
+- TaskMarket acts as marketplace **coordinator and payer**; service-provider
+  agents operate as **merchants** with their own GOAT Flow merchant accounts.
+- On-chain identity and reputation via the canonical **ERC-8004** registries;
+  TaskMarket indexes them rather than deploying new registries.
+- Direct, non-custodial payments via **x402 (GOAT Flow)** DIRECT transfers.
+- Framework-agnostic agent execution, with a first reference agent built on the
+  Vercel AI SDK and services exposed over MCP.
 
-Agents should be able to:
+### Non-goals (MVP)
 
-- discover other agents and evaluate their capabilities;
-- hire other agents to perform tasks;
-- pay for and receive task results programmatically;
-- establish verifiable identities and build reputation from completed work;
-- participate in economic activity without a human in the loop.
+- No escrow, no custody of third-party agent funds, no central merchant
+  operation (except TaskMarket's own reference agents).
+- No new on-chain registry, no new agent protocol, no custom settlement chain.
+- No .goat naming (GNS), no DeFi, no cross-chain bridging, no consumer
+  giftcard/checkout product.
+- No ERC-8004 Validation Registry adoption (revisit in a later phase).
 
-## Planned components
+## 2. System context
 
-Everything below is **planned** and intentionally not yet implemented.
+External actors and dependencies that TaskMarket integrates with. All protocol
+facts are drawn from the verified research report.
 
-### Frontend (planned)
+```mermaid
+graph LR
+    subgraph TaskMarket
+        TM[TaskMarket Platform]
+    end
 
-A user-facing interface for browsing, evaluating, and interacting with agents
-and tasks. Likely built with Next.js + TypeScript on top of the shared
-workspace packages. UI details will be decided in the frontend phase.
+    Human[Human / Organization]
+    BuyerAgent[Buyer Agent]
+    SellerAgent[Service-Provider Agent]
 
-### Backend / API (planned)
+    GOAT[GOAT Network L2<br/>chain 48816 testnet / 2345 mainnet]
+    Flow[x402 / GOAT Flow<br/>merchant orders, DIRECT transfers, webhooks]
+    ERC8[ERC-8004 registries<br/>Identity + Reputation]
+    Indexer[Subgraph indexer<br/>e.g. Sentio]
+    IPFS[IPFS / HTTPS<br/>registration JSON]
+    RPC[GOAT RPC endpoints]
 
-API services that coordinate the marketplace: task listings, agent metadata,
-discovery/search, and orchestration of payments and results. Likely built with
-TypeScript on Node.js. Exact framework selection belongs to the backend phase.
+    Human -->|uses| TM
+    BuyerAgent -->|uses| TM
+    TM -->|pays via x402 DIRECT| SellerAgent
+    SellerAgent -->|merchant account| Flow
+    TM -->|inspects orders, verifies payments| Flow
+    TM -->|reads + indexes| ERC8
+    TM -->|reads registration JSON| IPFS
+    TM -->|on-chain reads / writes| GOAT
+    TM -->|RPC| RPC
+    Indexer -->|indexed events| ERC8
+```
 
-### Agent layer (planned)
+Key facts (verified in research §3, §7, §8):
 
-The runtime that hosts and executes TaskMarket's own agents, built on GOAT
-AgentKit so that agents can perform on-chain operations on GOAT Network. The
-agent layer will be separated from application logic and will use AgentKit's
-policy engine, execution runtime, and action providers.
+- **GOAT Network** is an EVM-compatible Bitcoin-secured L2. Native gas is BTC
+  (18 decimals). Testnet3 chain ID `48816`, Alpha Mainnet chain ID `2345`.
+- **x402 / GOAT Flow**: payment is a direct ERC-20 transfer from payer to the
+  merchant's receiving address (`DIRECT` mode). Merchants are approval-gated in
+  the Merchant Portal; buyers/payers need no merchant credentials.
+- **ERC-8004**: three registries (Identity, Reputation, Validation). AgentKit
+  resolves registry addresses from the network at runtime; addresses differ
+  between Testnet3 and Mainnet.
 
-### Database (planned)
+## 3. Component overview
 
-PostgreSQL is the intended primary datastore for marketplace entities such as
-tasks, agents, orders, and reputation state. The schema will be defined when
-the first persistence requirements are implemented.
+Planned subsystems and their boundaries.
 
-### Blockchain / protocol integrations (planned)
+```mermaid
+graph LR
+    subgraph Frontend
+        Web[Web frontend<br/>Next.js + TS]
+    end
 
-GOAT Network is a Bitcoin-secured Layer 2. Planned integrations include:
+    subgraph Backend["TaskMarket Backend"]
+        API[API / Marketplace Core]
+        TaskEngine[Task Engine]
+        Catalog[Agent Catalog & Search]
+        Recon[Reconciliation & Audit]
+    end
 
-- **GOAT AgentKit** for agent on-chain capabilities;
-- **x402** for programmatic agent payments;
-- **ERC-8004** for verifiable on-chain agent identity and reputation.
+    subgraph Adapters["Protocol Adapters"]
+        Pay[Payment Adapter<br/>x402 / GOAT Flow]
+        Ident[Identity Adapter<br/>ERC-8004]
+        Index[Indexer Adapter<br/>events + registration JSON]
+    end
 
-All protocol integrations must be verified against current official
-documentation before implementation (see
-[engineering principles](engineering-principles.md)).
+    subgraph Runtime["Agent Runtime"]
+        Agents[TaskMarket-hosted agents<br/>AgentKit runtime + Vercel AI SDK + MCP]
+    end
 
-### x402 payment layer (planned)
+    subgraph Data
+        PG[(PostgreSQL<br/>application state + indexed on-chain)]
+        Redis[(Redis<br/>idempotency / queues / rate limits)]
+    end
 
-A payment layer through which agents pay one another programmatically for
-completed tasks, using the x402 protocol. Details such as merchant gateways,
-order lifecycle, and cross-chain settlement will be specified in the payments
-phase.
+    Web --> API
+    API --> TaskEngine
+    API --> Catalog
+    TaskEngine --> Pay
+    TaskEngine --> Ident
+    Catalog --> Index
+    Pay --> Flow[GOAT Flow]
+    Ident --> ERC8[ERC-8004 registries]
+    API --> Agents
+    API --> PG
+    TaskEngine --> PG
+    Recon --> Redis
+    Catalog --> PG
+    Index --> PG
+    API --> Redis
+    Agents --> Pay
+```
 
-### ERC-8004 identity / reputation layer (planned)
+The backend exposes one API surface to the frontend and to buyer agents. All
+external protocol interactions (GOAT Flow, ERC-8004, RPC, IPFS, subgraph) pass
+through isolated **protocol adapters**; marketplace domain logic never calls
+protocol SDKs directly (see [§7](#7-protocol-adapter-isolation) and
+[ADR-0007](adr/ADR-0007-protocol-adapter-boundaries.md)).
 
-An identity layer that gives every participating agent a verifiable on-chain
-identity and lets reputation be built from completed work. Registration,
-metadata, and reputation mechanics will be specified in a later phase.
+## 4. Planned components and responsibilities
 
-## Security considerations
+Each item is planned for a specific later phase; nothing is implemented yet.
 
-- **Application logic and blockchain integrations must be separated.** Protocol
-  and payment code lives behind well-defined boundaries so marketplace logic
-  can be tested without touching live networks.
-- **Least privilege.** Agents must never receive permissions beyond what a task
-  requires.
-- **Controlled autonomy.** Agents should have configurable spending and action
-  limits.
-- **No credentials in code.** Private keys, seed phrases, and API tokens must
-  never be committed.
-- **Explicit failure handling.** External services, blockchain calls, payments,
-  and agent interactions must have robust error handling.
-- **Observability.** Important actions should be traceable through logs and
-  events.
+### 4.1 Frontend (planned, Next.js)
 
-## Repository layout
+A user-facing interface for browsing and evaluating agents, posting and
+administering tasks, inspecting payment/order status, and viewing reputation.
+Built with Next.js + TypeScript on top of the shared workspace packages, and
+consumes only the TaskMarket API. UI details are decided in the frontend phase.
+
+### 4.2 API / Marketplace Core (planned, Fastify)
+
+The backend service that owns marketplace state and exposes a typed API:
+
+- accounts, roles, API keys, quotas (human/org ↔ TaskMarket account);
+- task listings, offers, assignments, task results;
+- search/matching over the agent catalog;
+- orchestration of payments (via the payment adapter) and of task execution
+  (via the task engine);
+- webhook receivers for GOAT Flow order events and agent task callbacks.
+
+### 4.3 Task Engine (planned)
+
+Owns the task lifecycle: listing → assignment/offer → execution → result →
+payment reconciliation → feedback. Idempotency keys and stable task IDs prevent
+duplicate execution; it reconciles order/`dappOrderId` ↔ task assignment ↔
+on-chain tx hash before finalizing state (see [§8.4](#84-payment-reconciliation)
+and [§9](#9-failure-and-security-paths)).
+
+### 4.4 Agent Runtime / TaskMarket-hosted agents (planned)
+
+- TaskMarket-hosted reference agents run on the **AgentKit runtime**
+  (`ExecutionRuntime` + `PolicyEngine`) so every action is policy-gated,
+  idempotent, retryable, and observable.
+- The execution core is **framework-agnostic**: AgentKit `ActionProvider`
+  exports tools to multiple AI frameworks. The first reference agent uses the
+  **Vercel AI SDK** and exposes its services over **MCP**
+  (`provider.mcpTools()`).
+- Third-party agents that join the marketplace run their own runtime on their
+  own infrastructure; TaskMarket integrates with them only via declared
+  endpoints and on-chain identity.
+
+### 4.5 Payment Adapter (planned, x402 / GOAT Flow)
+
+Isolated adapter that owns all payment mechanics and shields the domain layer:
+
+- order creation and HTTP 402 challenge handling;
+- DIRECT transfers (payer side) and order status/proof retrieval;
+- webhook verification and event processing;
+- reconciliation support (`dappOrderId`, order/session ID, tx hash).
+
+TaskMarket never custodies funds. Payment verification always comes from
+trusted server status/proof/webhook state — never from a browser callback
+(see [ADR-0003](adr/ADR-0003-payment-architecture.md)).
+
+### 4.6 Identity & Reputation Adapter (planned, ERC-8004)
+
+Isolated adapter that owns ERC-8004 interaction:
+
+- registration, metadata, `agentWallet`, reputation reads/writes via the
+  AgentKit `erc8004` plugin;
+- network-aware registry address resolution (never hardcode one address for
+  both networks);
+- mapping of TaskMarket agents ↔ `(identityRegistry, agentId)`.
+
+### 4.7 Indexer & Catalog (planned)
+
+- An indexer consumes ERC-8004 events (registration, metadata, feedback,
+  agentWallet changes) via a subgraph (GOAT documents Sentio) and TaskMarket's
+  own indexer, resolves registration JSON (IPFS/HTTPS), and writes derived,
+  rebuildable state to PostgreSQL.
+- The catalog builds search/filtering over capabilities, endpoints, and trust
+  signals. It complements, not duplicates, ERC-8004.
+
+### 4.8 Data stores (planned)
+
+- **PostgreSQL**: off-chain application state (users, accounts, tasks,
+  assignments, results, payment intents/events, audit records) plus cached /
+  indexed copies of on-chain state (agent catalog, reputation aggregates).
+- **Redis**: distributed idempotency (AgentKit idempotency keys), queues, and
+  rate limiting (see [ADR-0005](adr/ADR-0005-data-stores-and-queues.md)).
+
+### 4.9 Queues / events (planned)
+
+- Background work (indexer, webhook fan-out, task result delivery,
+  reconciliation) runs on Redis-backed queues.
+- State transitions emit events that feed the audit log and analytics.
+- Task submission is synchronous request/response for simple tasks; async jobs
+  are orchestrated by TaskMarket via webhooks/callbacks + polling (following
+  the GOAT Flow order-status pattern).
+
+### 4.10 Observability (planned)
+
+- Structured JSON logging (pino; compatible with AgentKit's structured logger).
+- Prometheus metrics (AgentKit exposes `/metrics` via `AGENTKIT_METRICS_PORT`).
+- Audit log of marketplace actions (who did what, when); execution hooks feed
+  agent action audit trails.
+
+## 5. Data ownership and trust boundaries
+
+### 5.1 What belongs on-chain (source of truth)
+
+- ERC-8004 registrations (`agentId`, owner, `agentURI`, metadata,
+  `agentWallet`).
+- ERC-8004 feedback / reputation (values, revocation, responses).
+- x402 DIRECT transfers and their tx hashes.
+
+### 5.2 What belongs off-chain (TaskMarket's own data)
+
+- Users, accounts, roles, API keys.
+- Task listings, assignments, offers, task results.
+- Payment intents, order-status snapshots, webhook state, reconciliation.
+- TaskMarket analytics and derived reputation signals.
+
+### 5.3 Cached / indexed state (derived, rebuildable)
+
+- Indexed ERC-8004 metadata and registration JSON (from events/IPFS).
+- Reputation aggregates, agent catalogs, search indexes.
+- Historical order/payment rollups for dashboards.
+
+### 5.4 Trust boundaries
+
+```mermaid
+graph LR
+    subgraph untrusted["Untrusted input"]
+        A[Registration JSON / endpoints]
+        B[Agent MCP tools / task results]
+        C[Webhook payloads]
+        D[Browser callbacks]
+    end
+
+    subgraph trusted["Trusted TaskMarket domain"]
+        E[API / Marketplace Core]
+        F[Task Engine]
+        G[Adapters]
+        H[(PostgreSQL)]
+    end
+
+    A -->|validate at boundary| E
+    B -->|validate at boundary| F
+    C -->|verify signature + reconcile| G
+    D -->|never trusted| G
+    E --> H
+```
+
+Never trust without verification (research §18):
+
+- merchant API keys/secrets — backend-only, never client-side;
+- browser `onSuccess` callbacks — UX-only, never proof of payment;
+- any order status or webhook payload — must be authenticated, signed, and
+  reconciled;
+- registration JSON content and endpoints — unverified until proven or
+  domain-verified (`/.well-known/agent-registration.json`);
+- fee configuration and token/chain matrices — read from the live environment,
+  never hardcoded;
+- reputation claims — require evidence.
+
+### 5.5 Identity model
+
+Keep these concepts distinct (research §9): a **User** owns a **TaskMarket
+account**, which manages **Agents**; each agent controls a **signer wallet** and
+is associated with an **ERC-8004 identity** (`agentId` + registry); reputation
+accumulates at the ERC-8004 identity, not at the TaskMarket account. Owner
+wallet ≠ `agentWallet`; each agent has its own signer key (least privilege).
+
+## 6. On-chain vs off-chain responsibility matrix
+
+| Concern            | On-chain                                           | Off-chain (TaskMarket)                                  |
+| ------------------ | -------------------------------------------------- | ------------------------------------------------------- |
+| Identity           | ERC-8004 registrations, metadata, `agentWallet`    | Agent ↔ identity mapping, catalog entries               |
+| Reputation         | ERC-8004 feedback, revocation, responses           | Derived aggregates, task-completion evidence, analytics |
+| Payments           | DIRECT ERC-20 transfers + tx hashes                | Payment intents, order-status snapshots, reconciliation |
+| Tasks / results    | Result evidence pointers/hashes (only if required) | Task listings, assignments, results, matching           |
+| Discovery          | Canonical discovery primitive (registry)           | Indexed catalog, search, filtering                      |
+| Pricing / catalogs | —                                                  | Off-chain until paid surfaces exist                     |
+| Accounts / roles   | —                                                  | PostgreSQL                                              |
+| Audit              | Immutable on-chain events                          | TaskMarket audit log                                    |
+
+## 7. Protocol adapter isolation
+
+- Domain logic never calls protocol SDKs directly. External protocols
+  (AgentKit/x402/ERC-8004/RPC/IPFS/subgraph) are behind adapters with narrow,
+  typed interfaces.
+- Adapters validate all external input at the trust boundary, translate
+  protocol state into domain state, and map errors into structured domain
+  errors.
+- This keeps marketplace logic testable without touching live networks and
+  lets individual protocol integrations be upgraded independently
+  (see [ADR-0007](adr/ADR-0007-protocol-adapter-boundaries.md)).
+
+## 8. Task lifecycle (planned flow)
+
+A high-level end-to-end example: a buyer hires a service-provider agent for a
+paid task.
+
+```mermaid
+sequenceDiagram
+    participant B as Buyer (human or agent)
+    participant TM as TaskMarket API + Task Engine
+    participant P as Payment Adapter (x402/GOAT Flow)
+    participant S as Service-Provider Agent (merchant)
+    participant E as ERC-8004
+
+    B->>TM: create task listing (price, capabilities)
+    TM->>TM: match against catalog, create assignment
+    TM->>S: submit task / create order (dappOrderId)
+    S-->>TM: return x402 challenge (HTTP 402)
+    TM->>P: pay via DIRECT transfer (order, amount, payTo)
+    P-->>TM: order status / tx hash
+    S-->>TM: deliver result (or webhook)
+    TM->>TM: reconcile order + task + tx hash
+    TM-->>B: result + payment status
+    B->>E: give feedback (ERC-8004 reputation)
+    TM->>TM: record reputation events + audit log
+```
+
+Notes on the flow (each verified in research):
+
+- TaskMarket is the **payer**; the service-provider agent is the **merchant**
+  with its own merchant account. Payments are DIRECT — no custody, no escrow.
+- Fulfillment is gated on trusted server status/proof/webhook, never on a
+  browser callback.
+- Reputation feedback must come from a party that is **not** the agent's
+  owner/operator; when an agent submits feedback as a client it SHOULD use its
+  `agentWallet` address.
+
+## 9. Failure and security paths
+
+Security requirements are honored as design constraints now and implemented in
+the phases that build the components (see [ADR-0009](adr/ADR-0009-observability-and-audit.md)
+and research §15 for the full threat table).
+
+- **Authentication/authorization**: API keys + bearer tokens per TaskMarket
+  account (MVP); ERC-8004 identity as the long-term verifiable anchor.
+  Merchant credentials are backend-only.
+- **Input validation**: Zod schemas at every trust boundary; registration JSON,
+  endpoints, tool outputs, and webhook payloads are treated as untrusted
+  content.
+- **Secrets**: private keys and merchant API secrets only in environment /
+  secrets manager, per-agent keys, never in code, logs, or artifacts.
+- **SSRF / untrusted URLs**: agent endpoints and registration JSON URIs are
+  never fetched blindly; allowlists and strict URL validation at adapters.
+- **Injection / unsafe outputs**: no automatic tool invocation from untrusted
+  metadata; strict output validation; capability allowlists per agent.
+- **Replay / duplicates**: idempotency keys for payments and tasks, unique
+  nonces, receipt single-use, task dedup by content hash/id.
+- **Payment authorization**: AgentKit policy gate, risk gating (confirmation
+  for `medium`+ risk), per-agent budgets (per-tx and daily) enforced in
+  TaskMarket application code, approved-token/recipient allowlists before any
+  real-money transactions.
+- **Rate limiting / DoS**: Redis-backed rate limits and per-account quotas,
+  bounded retries, hosting-level protections, dedicated RPC infrastructure in
+  production (public RPCs are rate-limited).
+- **Webhook spoofing**: signature/secret verification, HTTPS-only, replay
+  windows, idempotent processing.
+- **Observability of failures**: structured logs, Prometheus metrics, audit
+  log; failures are recoverable and observable, not silently swallowed.
+
+## 10. Repository layout mapping
+
+The workspace is organized to match these boundaries (no code exists yet):
 
 ```
 taskmarket/
-├── apps/        # Planned: frontend / backend application deployments
-├── packages/    # Planned: reusable libraries shared across apps and agents
-├── agents/      # Planned: TaskMarket's own agent implementations
-├── docs/        # Architecture and engineering documentation
-├── scripts/     # Repository utility scripts
-├── tests/       # Repository-level tests (currently: environment sanity)
-└── .github/     # GitHub configuration (CI workflows)
+├── apps/
+│   ├── web/          # Frontend (Next.js)                      [4.1]
+│   └── api/          # Marketplace Core API (Fastify)          [4.2]
+├── packages/
+│   ├── core/         # Domain logic, types, errors             [4.2]
+│   ├── task-engine/  # Task lifecycle                          [4.3]
+│   ├── catalog/      # Agent catalog + search                  [4.7]
+│   ├── adapters/     # Protocol adapters (payment, identity)   [4.5, 4.6, 4.7]
+│   ├── agent-kit/    # Shared AgentKit integration helpers     [4.4]
+│   └── observability/# logging, metrics, audit                 [4.10]
+├── agents/
+│   └── reference/    # First TaskMarket-hosted reference agent [4.4]
+├── docs/
+│   ├── architecture.md
+│   ├── adr/          # Architecture decision records
+│   └── research/     # Verified technical research
+├── scripts/          # Repository utility scripts
+└── tests/            # Repository-level tests
 ```
 
-The workspace is managed with pnpm workspaces. Each application, package, and
-agent will have its own build, test, and type-check configuration extending the
-shared base configuration at the repository root.
+## 11. Decisions and references
+
+- All architecture decisions are recorded in [docs/adr/](adr/) — see the
+  [ADR index](adr/README.md).
+- Technical facts above are cited from
+  [docs/research/goat-technical-research.md](research/goat-technical-research.md),
+  which lists primary sources (GOAT docs, GOAT Flow, ERC-8004 EIP draft, npm
+  registry). Re-verify protocol facts against current official documentation
+  before implementing any protocol integration (engineering principle).

@@ -3,3 +3,6 @@ dist
 coverage
 .next
 pnpm-lock.yaml
+
+# Development prompt collection kept outside the product repository
+taskmarket-ai-prompts
