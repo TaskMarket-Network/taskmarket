@@ -45,17 +45,22 @@ locked versions.
 
 ## Environment configuration
 
-Copy the example environment file if (and only when) the project requires
-environment variables:
+The foundation requires no runtime environment variables for code checks. A
+local development environment is available for the database stack and later
+phases:
 
 ```sh
 cp .env.example .env
+pnpm db:up
 ```
 
-The project foundation currently requires no runtime environment variables, so
-`.env.example` intentionally contains no variables. Never commit real secrets;
-local `.env` files are ignored by Git. GOAT Network variables will be added in
-the phase that introduces GOAT AgentKit integration.
+`.env.example` contains safe local-development defaults only (testnet-oriented,
+no real credentials). `pnpm preflight` validates `.env` if present and refuses
+unsafe values such as `NODE_ENV=production` or embedded private keys. Never
+commit real secrets; local `.env` files are ignored by Git. GOAT Network
+variables will be added in the phase that introduces GOAT AgentKit
+integration. See [docs/development.md](docs/development.md) for the full
+onboarding guide.
 
 ## Development commands
 
@@ -64,16 +69,22 @@ All commands run from the repository root using pnpm.
 | Task               | Command             |
 | ------------------ | ------------------- |
 | Verify environment | `pnpm preflight`    |
+| Validate env       | `pnpm check:env`    |
 | Format code        | `pnpm format`       |
 | Check formatting   | `pnpm format:check` |
 | Lint               | `pnpm lint`         |
 | Type check         | `pnpm typecheck`    |
 | Run tests          | `pnpm test`         |
 | Run tests (watch)  | `pnpm test:watch`   |
-| Run all checks     | `pnpm check`        |
+| All checks         | `pnpm check`        |
+| Start local DB     | `pnpm db:up`        |
+| Stop local DB      | `pnpm db:down`      |
+| Local DB logs      | `pnpm db:logs`      |
+| Check local DB     | `pnpm db:check`     |
 
 `pnpm check` runs formatting checks, linting, type checking, and tests in
-sequence.
+sequence. The database commands require Docker and are documented in
+[docs/development.md](docs/development.md).
 
 ## Project structure
 

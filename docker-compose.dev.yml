@@ -1,0 +1,49 @@
+# Local development services for TaskMarket (Phase 00 foundation).
+#
+# This compose file is for LOCAL DEVELOPMENT ONLY. It provisions the local
+# PostgreSQL and Redis instances described in ADR-0005 (data stores and queues).
+# The credentials and settings below are safe local placeholders and must
+# never be used in production. Production configuration is out of scope until
+# a later deployment phase.
+#
+# Usage (from the repository root):
+#   pnpm db:up       # start services (waits for health)
+#   pnpm db:check    # verify reachability
+#   pnpm db:logs     # follow logs
+#   pnpm db:down     # stop services (data persists in named volumes)
+services:
+  postgres:
+    image: postgres:17-alpine
+    container_name: taskmarket-dev-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: taskmarket_dev
+      POSTGRES_PASSWORD: taskmarket_dev
+      POSTGRES_DB: taskmarket_dev
+    ports:
+      - '5432:5432'
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U taskmarket_dev -d taskmarket_dev']
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  redis:
+    image: redis:7-alpine
+    container_name: taskmarket-dev-redis
+    restart: unless-stopped
+    ports:
+      - '6379:6379'
+    volumes:
+      - redis-data:/data
+    healthcheck:
+      test: ['CMD', 'redis-cli', 'ping']
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+volumes:
+  postgres-data:
+  redis-data:
