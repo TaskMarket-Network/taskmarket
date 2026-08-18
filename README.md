@@ -95,7 +95,7 @@ taskmarket/
 ├── agents/      # Planned: TaskMarket's own agent implementations
 ├── docs/        # Architecture and engineering documentation
 ├── scripts/     # Repository utility scripts
-├── tests/       # Repository-level tests (currently: environment sanity)
+├── tests/       # Repository-level tests (sanity + tooling checks)
 └── .github/     # GitHub configuration (CI workflows)
 ```
 
@@ -106,10 +106,11 @@ own build, test, and type-check configuration extending the shared
 
 ## Testing
 
-The test runner is [Vitest](https://vitest.dev/). Currently there is a single
-environment sanity test at `tests/sanity.test.ts` that verifies the testing
-environment works; it does not assert any marketplace functionality. Run with
-`pnpm test`.
+The test runner is [Vitest](https://vitest.dev/). Tests currently cover the
+foundation: an environment sanity check (`tests/sanity.test.ts`), environment
+validation (`tests/env-check.test.mjs`), and local database service checks
+(`tests/local-services.test.mjs`). No marketplace functionality is asserted.
+Run with `pnpm test`.
 
 ## Linting and formatting
 

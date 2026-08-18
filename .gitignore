@@ -146,3 +146,7 @@ vite.config.ts.timestamp-*
 .DS_Store
 .idea/
 *.swp
+
+# TaskMarket AI development prompts (kept outside the product repository)
+taskmarket-ai-prompts
+taskmarket-ai-prompts.zip
