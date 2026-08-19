@@ -122,14 +122,16 @@ describe('runTool — failure paths', () => {
     });
   });
 
-  it('returns POLICY_BLOCKED for a disallowed network context', async () => {
-    const { agent } = runtime({
-      agentKitConfig: { networks: ['goat-testnet', 'goat-mainnet'] },
-    });
-    const result = await agent.runTool('wallet.balance', {
-      address: '0x0000000000000000000000000000000000000001',
-    });
-    expect(result.ok).toBe(true);
+  it('surfaces POLICY_BLOCKED through the runtime for a disallowed network', async () => {
+    const { agent } = runtime();
+    const result = await agent.components.runtime.run(
+      agent.components.provider.get('wallet.balance'),
+      { traceId: 'trace_1', network: 'goat-mainnet', now: FIXED_NOW },
+      { address: '0x0000000000000000000000000000000000000001' },
+    );
+    expect(result.ok).toBe(false);
+    expect(result.errorCode).toBe('POLICY_BLOCKED');
+    expect(result.attempts).toBe(0);
   });
 
   it('records failure metrics and warning logs', async () => {
