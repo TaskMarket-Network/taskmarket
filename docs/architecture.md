@@ -175,7 +175,10 @@ and [§9](#9-failure-and-security-paths)).
   testnet-safe defaults) and initialization (`ActionProvider`, `PolicyEngine`,
   `ExecutionRuntime`) behind a clean internal interface. It registers base
   read-only wallet actions only; wallet providers, payments, and identity are
-  added by later tasks.
+  added by later tasks. It also owns the verified GOAT network facts and the
+  RPC connectivity check (`checkGoatNetworkConnectivity`: `eth_chainId` +
+  `eth_blockNumber`, chain-ID verification, safe failure), used by
+  `pnpm check:network` for development connectivity.
 - The execution core is **framework-agnostic**: AgentKit `ActionProvider`
   exports tools to multiple AI frameworks. The first reference agent uses the
   **Vercel AI SDK** and exposes its services over **MCP**

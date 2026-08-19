@@ -45,10 +45,44 @@ Local `.env` files are git-ignored; never commit real secrets.
 - `pnpm preflight` refuses `NODE_ENV=production` and flags anything that looks
   like a private key in `.env`.
 - `pnpm check:env` runs the same validation standalone.
-- GOAT Network RPC/wallet variables are added in the GOAT testnet connectivity
-  phase. The `@taskmarket/agent-kit` package (Phase 1) already reads the
-  documented `AGENTKIT_*` variables from `.env` for idempotency, metrics, and
-  policy configuration; the safe local defaults are in `.env.example`.
+- GOAT network configuration (`GOAT_NETWORK`, `GOAT_TESTNET_RPC_URL`,
+  `GOAT_MAINNET_RPC_URL`, `GOAT_RPC_TIMEOUT_MS`, `GOAT_ALLOW_MAINNET`) and the
+  RPC connectivity check are documented in
+  [GOAT testnet connectivity](#goat-testnet-connectivity) below. The
+  `@taskmarket/agent-kit` package (Phase 1) reads the documented `AGENTKIT_*`
+  variables from `.env` for idempotency, metrics, and policy configuration; the
+  safe local defaults are in `.env.example`.
+
+## GOAT testnet connectivity
+
+TaskMarket develops against **GOAT Testnet3** (chain ID `48816`, RPC
+`https://rpc.testnet3.goat.network`) by default. The verified network facts and
+the RPC connectivity check live in `packages/agent-kit`
+(`src/network.ts`, `src/connectivity.ts`) and are exposed as a CLI check:
+
+```sh
+pnpm check:network
+```
+
+`check:network` probes the configured GOAT RPC endpoint with `eth_chainId` and
+`eth_blockNumber`, verifies the reported chain ID matches the configured
+network, and prints block/chain/latency. It exits non-zero on any failure
+(unreachable, timeout, malformed response, or chain-ID mismatch). It is
+read-only: it never sends transactions.
+
+Environment variables (safe defaults in `.env.example`):
+
+| Variable               | Default                             | Purpose                                                              |
+| ---------------------- | ----------------------------------- | -------------------------------------------------------------------- |
+| `GOAT_NETWORK`         | `goat-testnet`                      | Active network: `goat-testnet`/`goat-mainnet`.                       |
+| `GOAT_TESTNET_RPC_URL` | `https://rpc.testnet3.goat.network` | Testnet RPC override.                                                |
+| `GOAT_MAINNET_RPC_URL` | `https://rpc.goat.network`          | Mainnet RPC override.                                                |
+| `GOAT_RPC_TIMEOUT_MS`  | `10000`                             | RPC request timeout (milliseconds).                                  |
+| `GOAT_ALLOW_MAINNET`   | `0`                                 | `1` allows `goat-mainnet` in development (explicit production gate). |
+
+Mainnet is refused in development unless `GOAT_ALLOW_MAINNET=1` (or
+`NODE_ENV=production`), and the connectivity check verifies the chain ID before
+reporting success.
 
 ## Local database stack
 
@@ -70,17 +104,18 @@ exits non-zero and prints `pnpm db:up` as the remedy.
 
 ## Daily workflow
 
-| Task               | Command             |
-| ------------------ | ------------------- |
-| Verify environment | `pnpm preflight`    |
-| Format code        | `pnpm format`       |
-| Check formatting   | `pnpm format:check` |
-| Lint               | `pnpm lint`         |
-| Type check         | `pnpm typecheck`    |
-| Run tests          | `pnpm test`         |
-| Run tests (watch)  | `pnpm test:watch`   |
-| Validate env       | `pnpm check:env`    |
-| All checks         | `pnpm check`        |
+| Task               | Command              |
+| ------------------ | -------------------- |
+| Verify environment | `pnpm preflight`     |
+| Format code        | `pnpm format`        |
+| Check formatting   | `pnpm format:check`  |
+| Lint               | `pnpm lint`          |
+| Type check         | `pnpm typecheck`     |
+| Run tests          | `pnpm test`          |
+| Run tests (watch)  | `pnpm test:watch`    |
+| Validate env       | `pnpm check:env`     |
+| Check GOAT RPC     | `pnpm check:network` |
+| All checks         | `pnpm check`         |
 
 `pnpm check` runs formatting checks, linting, type checking, and tests in
 sequence. It does not require the database stack.

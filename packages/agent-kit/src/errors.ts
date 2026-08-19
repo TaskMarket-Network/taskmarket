@@ -32,3 +32,11 @@ export class AgentKitInitializationError extends AgentKitError {
     this.name = 'AgentKitInitializationError';
   }
 }
+
+/** Raised when a GOAT network/RPC connectivity check fails safely. */
+export class AgentKitConnectivityError extends AgentKitError {
+  constructor(code: string, message: string) {
+    super(code, message);
+    this.name = 'AgentKitConnectivityError';
+  }
+}
