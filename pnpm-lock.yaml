@@ -46,6 +46,22 @@ importers:
         specifier: ^5.9.3
         version: 5.9.3
 
+  packages/agent-runtime:
+    dependencies:
+      '@goatnetwork/agentkit':
+        specifier: ^0.2.3
+        version: 0.2.3(typescript@5.9.3)
+      '@taskmarket/agent-kit':
+        specifier: workspace:*
+        version: link:../agent-kit
+      zod:
+        specifier: ^3.24.2
+        version: 3.25.76
+    devDependencies:
+      typescript:
+        specifier: ^5.9.3
+        version: 5.9.3
+
 packages:
 
   '@adraffy/ens-normalize@1.11.1':

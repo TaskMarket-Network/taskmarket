@@ -1,0 +1,26 @@
+{
+  "name": "@taskmarket/agent-runtime",
+  "version": "0.0.0",
+  "description": "TaskMarket's minimal agent runtime: a small, testable tool/action boundary, structured configuration, and observability on top of GOAT AgentKit.",
+  "private": true,
+  "type": "module",
+  "main": "src/index.ts",
+  "types": "src/index.ts",
+  "exports": {
+    ".": {
+      "types": "./src/index.ts",
+      "default": "./src/index.ts"
+    }
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@goatnetwork/agentkit": "^0.2.3",
+    "@taskmarket/agent-kit": "workspace:*",
+    "zod": "^3.24.2"
+  },
+  "devDependencies": {
+    "typescript": "^5.9.3"
+  }
+}

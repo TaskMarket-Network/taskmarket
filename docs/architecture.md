@@ -179,6 +179,18 @@ and [§9](#9-failure-and-security-paths)).
   RPC connectivity check (`checkGoatNetworkConnectivity`: `eth_chainId` +
   `eth_blockNumber`, chain-ID verification, safe failure), used by
   `pnpm check:network` for development connectivity.
+- The minimal agent runtime lives in **`packages/agent-runtime`
+  (implemented, Phase 1)**: a small, testable tool/action boundary on top of
+  `@taskmarket/agent-kit`. It provides Zod-validated structured configuration,
+  a typed tool registry with an EVM-address validator, a policy-gated and
+  idempotent execution path (`runTool` returning structured `ToolResult`s with
+  trace/request IDs, latency, attempts, and structured errors), built-in
+  observability (structured logging + in-process metrics), and health/capability
+  introspection. Only read-only base tools are registered (`agent.ping`,
+  `agent.capabilities`, `wallet.balance`, `wallet.resolve_token`); wallet
+  providers, payments, and identity are added by later tasks. The runtime is
+  framework-agnostic: tools map 1:1 to AgentKit `ActionDefinition`s for export
+  to multiple AI frameworks.
 - The execution core is **framework-agnostic**: AgentKit `ActionProvider`
   exports tools to multiple AI frameworks. The first reference agent uses the
   **Vercel AI SDK** and exposes its services over **MCP**
@@ -418,6 +430,7 @@ taskmarket/
 │   ├── catalog/      # Agent catalog + search                  [4.7]  planned
 │   ├── adapters/     # Protocol adapters (payment, identity)   [4.5, 4.6, 4.7]  planned
 │   ├── agent-kit/    # Shared AgentKit integration helpers     [4.4]  implemented
+│   ├── agent-runtime/# Minimal agent runtime (tool boundary)   [4.4]  implemented
 │   └── observability/# logging, metrics, audit                 [4.10] planned
 ├── agents/
 │   └── reference/    # First TaskMarket-hosted reference agent [4.4]  planned

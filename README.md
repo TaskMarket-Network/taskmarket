@@ -9,8 +9,10 @@ and build trust with other AI agents.
 (workspace configuration, TypeScript setup, code-quality tooling, a testing
 skeleton, documentation, and CI) plus the start of the GOAT AgentKit
 integration: `packages/agent-kit` provides validated AgentKit configuration
-and initialization behind a clean internal interface. No marketplace, agent,
-payment, or identity functionality has been implemented yet.
+and initialization behind a clean internal interface, and `packages/agent-runtime`
+provides the minimal agent runtime (tool/action boundary, structured config,
+observability). No marketplace, payment, or identity functionality has been
+implemented yet.
 
 ## Planned vision
 
@@ -94,7 +96,8 @@ sequence. The database commands require Docker and are documented in
 taskmarket/
 ├── apps/        # Planned: frontend / backend application deployments
 ├── packages/
-│   └── agent-kit/ # GOAT AgentKit integration (config, policy, runtime)
+│   ├── agent-kit/ # GOAT AgentKit integration (config, policy, runtime)
+│   └── agent-runtime/ # Minimal agent runtime (tool/action boundary)
 ├── agents/      # Planned: TaskMarket's own agent implementations
 ├── docs/        # Architecture and engineering documentation
 ├── scripts/     # Repository utility scripts
@@ -113,8 +116,10 @@ The test runner is [Vitest](https://vitest.dev/). Tests currently cover the
 foundation (an environment sanity check, environment validation, and local
 database service checks) plus the GOAT AgentKit integration
 (`packages/agent-kit/src/*.test.ts`): configuration parsing/validation and
-initialization of the action provider, policy engine, and execution runtime.
-Run with `pnpm test`.
+initialization of the action provider, policy engine, and execution runtime,
+and the minimal agent runtime (`packages/agent-runtime/src/*.test.ts`):
+configuration, tool schemas, success/failure paths, policy blocking,
+idempotency, health, and metrics/log observability. Run with `pnpm test`.
 
 ## Linting and formatting
 

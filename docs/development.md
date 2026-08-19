@@ -139,13 +139,50 @@ and in-memory idempotency. Redis idempotency is supported by configuration but
 requires an injected `IdempotencyStore`; the local Redis stack is wired up in
 the phase that introduces the data-store layer.
 
+## Agent runtime (`@taskmarket/agent-runtime`)
+
+Phase 1 also introduces `packages/agent-runtime`, the minimal TaskMarket agent
+runtime built on `@taskmarket/agent-kit`. It provides the small, testable
+tool/action boundary every TaskMarket-hosted agent runs on (see the package
+README for the full API):
+
+- `loadAgentRuntimeConfig(env)` / `resolveAgentRuntimeConfig(input)` — parse
+  and validate the documented `AGENT_RUNTIME_*` environment variables
+  (agent id/name/description/version, declared capabilities, default network,
+  log level) with Zod, falling back to safe testnet-only defaults.
+- `createAgentRuntime(config, deps)` — build the tool registry, register the
+  base read-only tools (`agent.ping`, `agent.capabilities`, `wallet.balance`,
+  `wallet.resolve_token`), and wire them onto an AgentKit `ActionProvider` with
+  the `PolicyEngine` and `ExecutionRuntime`. `runTool(name, input, options)`
+  returns a structured `ToolResult` and every call is policy-gated, idempotent,
+  retryable, and observable.
+- `health()`, `listCapabilities()`, and `metricsSnapshot()` provide
+  liveness/identity, capability, and in-process metrics introspection.
+
+Environment variables (safe defaults in `.env.example`):
+
+| Variable                          | Default                                       | Purpose                                            |
+| --------------------------------- | --------------------------------------------- | -------------------------------------------------- |
+| `AGENT_RUNTIME_AGENT_ID`          | `taskmarket-reference`                        | Stable agent identifier.                           |
+| `AGENT_RUNTIME_AGENT_NAME`        | `TaskMarket Reference Agent`                  | Human-readable agent name.                         |
+| `AGENT_RUNTIME_AGENT_DESCRIPTION` | `Minimal TaskMarket agent runtime (Phase 1).` | One-line description.                              |
+| `AGENT_RUNTIME_AGENT_VERSION`     | `0.1.0`                                       | Agent build/semantic version.                      |
+| `AGENT_RUNTIME_CAPABILITIES`      | `agent:meta,wallet:read`                      | Comma-separated declared capability keys.          |
+| `AGENT_RUNTIME_DEFAULT_NETWORK`   | `goat-testnet`                                | Network tools execute against.                     |
+| `AGENT_RUNTIME_LOG_LEVEL`         | `info`                                        | Minimum log level (`debug`/`info`/`warn`/`error`). |
+
+Only read-only tools are registered; the runtime never moves funds or writes to
+chain. The agent service contract (input/output schemas, versioning, auth,
+health) is introduced in step 01-04.
+
 ## Project structure
 
 ```
 taskmarket/
 ├── apps/        # Planned: frontend / backend application deployments
 ├── packages/
-│   └── agent-kit/ # GOAT AgentKit integration (config, policy, runtime)
+│   ├── agent-kit/ # GOAT AgentKit integration (config, policy, runtime)
+│   └── agent-runtime/ # Minimal agent runtime (tool/action boundary)
 ├── agents/      # Planned: TaskMarket's own agent implementations
 ├── docs/        # Architecture, ADRs, and engineering documentation
 ├── scripts/     # Repository utility scripts
