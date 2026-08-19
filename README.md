@@ -13,7 +13,10 @@ and initialization behind a clean internal interface, and `packages/agent-runtim
 provides the minimal agent runtime (tool/action boundary, structured config,
 observability) and its model-agnostic service contract (versioned
 request/response envelopes, auth placeholders, and generated OpenAPI
-documentation). No marketplace, payment, or identity functionality has been
+documentation). `packages/agent-registry` introduces the off-chain agent
+registry domain model (registered agents, capabilities, endpoints, status,
+pricing, versioning) with a PostgreSQL migration and optimistic-concurrency
+repository. No marketplace, payment, or identity functionality has been
 implemented yet.
 
 ## Planned vision
@@ -87,6 +90,7 @@ All commands run from the repository root using pnpm.
 | Stop local DB      | `pnpm db:down`      |
 | Local DB logs      | `pnpm db:logs`      |
 | Check local DB     | `pnpm db:check`     |
+| Apply migrations   | `pnpm db:migrate`   |
 
 `pnpm check` runs formatting checks, linting, type checking, and tests in
 sequence. The database commands require Docker and are documented in
@@ -99,7 +103,8 @@ taskmarket/
 ├── apps/        # Planned: frontend / backend application deployments
 ├── packages/
 │   ├── agent-kit/ # GOAT AgentKit integration (config, policy, runtime)
-│   └── agent-runtime/ # Minimal agent runtime (tool/action boundary)
+│   ├── agent-runtime/ # Minimal agent runtime (tool/action boundary)
+│   └── agent-registry/ # Off-chain agent registry domain model + migrations
 ├── agents/      # Planned: TaskMarket's own agent implementations
 ├── docs/        # Architecture and engineering documentation
 ├── scripts/     # Repository utility scripts
@@ -123,7 +128,11 @@ and the minimal agent runtime (`packages/agent-runtime/src/*.test.ts`):
 configuration, tool schemas, success/failure paths, policy blocking,
 idempotency, health, metrics/log observability, and the service contract
 (envelope schemas, Zod → JSON Schema conversion, OpenAPI generation, and
-end-to-end request/response handling). Run with `pnpm test`.
+end-to-end request/response handling), and the agent registry
+(`packages/agent-registry/src/*.test.ts`): domain logic, input validation,
+status transitions, the in-memory repository, the migration runner, and a
+PostgreSQL integration test (skipped when the database is unreachable). Run
+with `pnpm test`.
 
 ## Linting and formatting
 

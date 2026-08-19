@@ -102,6 +102,23 @@ application state, idempotency, queues, and rate limiting (ADR-0005).
 defaults) and probes reachability. If a configured service is unreachable it
 exits non-zero and prints `pnpm db:up` as the remedy.
 
+## Migrations
+
+PostgreSQL migrations are plain `.sql` files under `packages/*/migrations/`,
+applied in filename order by a lightweight runner that records each applied
+migration in a `schema_migrations` table:
+
+```sh
+pnpm db:up        # start the local database stack (requires Docker)
+pnpm db:migrate   # apply pending migrations (idempotent)
+```
+
+`db:migrate` reads `DATABASE_URL` from `.env` (falling back to the safe local
+development default) and applies each pending migration in a transaction. The
+first migration (`packages/agent-registry/migrations/001_agent_registry.sql`)
+creates the off-chain `agents` table (agent registry domain model) with primary
+key, check constraints, and an immutable-field trigger.
+
 ## Daily workflow
 
 | Task               | Command              |
@@ -195,8 +212,32 @@ Environment variables (safe defaults in `.env.example`):
 | `AGENT_RUNTIME_DEFAULT_NETWORK`   | `goat-testnet`                                | Network tools execute against.                     |
 | `AGENT_RUNTIME_LOG_LEVEL`         | `info`                                        | Minimum log level (`debug`/`info`/`warn`/`error`). |
 
-Only read-only tools are registered; the runtime never moves funds or writes to
-chain.
+## Agent registry (`@taskmarket/agent-registry`)
+
+Phase 2 introduces `packages/agent-registry`, TaskMarket's off-chain agent
+registry domain model (see the package README for the full API):
+
+- `RegisteredAgent` entity with **immutable** fields (`id`, `ownerRef`,
+  `createdAt`) and **mutable** fields (`name`, `description`, `capabilities`,
+  `endpoints`, `status`, `pricing`); `version` increments on every update.
+- `createRegisteredAgent(input)` / `applyAgentUpdate(agent, input)` validate
+  all input at the trust boundary (Zod), enforce the status machine
+  (`draft -> active -> suspended -> retired`), and never mutate the input.
+- `AgentRegistryRepository` interface with an in-memory implementation for
+  tests and a `PostgresAgentRegistryRepository` with optimistic-concurrency
+  `save(agent, previousVersion)`.
+- The schema is created by `pnpm db:migrate`
+  (`packages/agent-registry/migrations/001_agent_registry.sql`); the database
+  rejects changes to immutable fields via a trigger.
+
+Environment variables (safe defaults in `.env.example`):
+
+| Variable       | Default                                                                  | Purpose                                               |
+| -------------- | ------------------------------------------------------------------------ | ----------------------------------------------------- |
+| `DATABASE_URL` | `postgres://taskmarket_dev:taskmarket_dev@localhost:5432/taskmarket_dev` | PostgreSQL connection for migrations and persistence. |
+
+The registry is **off-chain catalog state only** and is not ERC-8004 identity;
+protocol identity is introduced in a later phase.
 
 ## Project structure
 
@@ -205,7 +246,8 @@ taskmarket/
 ├── apps/        # Planned: frontend / backend application deployments
 ├── packages/
 │   ├── agent-kit/ # GOAT AgentKit integration (config, policy, runtime)
-│   └── agent-runtime/ # Minimal agent runtime (tool/action boundary)
+│   ├── agent-runtime/ # Minimal agent runtime (tool/action boundary)
+│   └── agent-registry/ # Off-chain agent registry domain model + migrations
 ├── agents/      # Planned: TaskMarket's own agent implementations
 ├── docs/        # Architecture, ADRs, and engineering documentation
 ├── scripts/     # Repository utility scripts

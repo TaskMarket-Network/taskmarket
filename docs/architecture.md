@@ -237,6 +237,11 @@ Isolated adapter that owns ERC-8004 interaction:
 
 ### 4.7 Indexer & Catalog (planned)
 
+The off-chain **agent registry domain model** (registered agents, capabilities,
+endpoints, status, pricing, versioning) is implemented in
+`packages/agent-registry` (Phase 2, step 02-01) with a PostgreSQL migration and
+optimistic-concurrency repository. The full indexer/catalog remains planned:
+
 - An indexer consumes ERC-8004 events (registration, metadata, feedback,
   agentWallet changes) via a subgraph (GOAT documents Sentio) and TaskMarket's
   own indexer, resolves registration JSON (IPFS/HTTPS), and writes derived,
@@ -430,7 +435,9 @@ and research §15 for the full threat table).
 
 ## 10. Repository layout mapping
 
-The workspace is organized to match these boundaries (no code exists yet):
+The workspace is organized to match these boundaries. Phase 1
+(`agent-kit`, `agent-runtime`) and the start of Phase 2
+(`agent-registry`) are implemented; the rest is planned:
 
 ```
 taskmarket/
@@ -444,6 +451,7 @@ taskmarket/
 │   ├── adapters/     # Protocol adapters (payment, identity)   [4.5, 4.6, 4.7]  planned
 │   ├── agent-kit/    # Shared AgentKit integration helpers     [4.4]  implemented
 │   ├── agent-runtime/# Minimal agent runtime (tool boundary)   [4.4]  implemented
+│   ├── agent-registry/# Off-chain agent registry domain model  [4.7]  implemented
 │   └── observability/# logging, metrics, audit                 [4.10] planned
 ├── agents/
 │   └── reference/    # First TaskMarket-hosted reference agent [4.4]  planned

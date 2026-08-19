@@ -22,13 +22,16 @@
     "db:up": "docker compose -f docker-compose.dev.yml up -d --wait",
     "db:down": "docker compose -f docker-compose.dev.yml down",
     "db:logs": "docker compose -f docker-compose.dev.yml logs -f",
-    "db:check": "node scripts/check-local-services.mjs"
+    "db:check": "node scripts/check-local-services.mjs",
+    "db:migrate": "node scripts/migrate.mjs"
   },
   "devDependencies": {
     "@eslint/js": "^9.39.5",
     "@types/node": "^22.20.1",
+    "@types/pg": "^8.15.0",
     "eslint": "^9.39.5",
     "globals": "^17.11.0",
+    "pg": "^8.16.0",
     "prettier": "^3.9.6",
     "typescript": "^5.9.3",
     "typescript-eslint": "^8.67.0",
