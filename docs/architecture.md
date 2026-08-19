@@ -191,6 +191,19 @@ and [§9](#9-failure-and-security-paths)).
   providers, payments, and identity are added by later tasks. The runtime is
   framework-agnostic: tools map 1:1 to AgentKit `ActionDefinition`s for export
   to multiple AI frameworks.
+- The **agent service contract** lives in **`packages/agent-runtime/src/contract`
+  (implemented, Phase 1)**: the internal and external contract for an agent
+  service, model- and transport-agnostic (a plain JSON boundary consumed by
+  Fastify/MCP adapters in later phases). It defines request/response envelopes
+  (`requestId`, `tool`, `input`, `idempotencyKey`, bounded `timeoutMs`,
+  `confirmed`, `caller`, and an **auth placeholder** that is documented but not
+  yet enforced), contract **versioning** (`AGENT_SERVICE_CONTRACT_VERSION`,
+  unsupported versions rejected with a structured error), structured contract
+  error codes, `createAgentService(runtime)` adapting an `AgentRuntime` into
+  the boundary (`parseRequest`/`execute`/`capabilities`/`health`), and an
+  **OpenAPI 3.1 generator** (`buildAgentServiceOpenApi`: `/health`,
+  `/capabilities`, `/tool`) built directly from the registered tool Zod
+  schemas so documentation cannot drift from the validated contract.
 - The execution core is **framework-agnostic**: AgentKit `ActionProvider`
   exports tools to multiple AI frameworks. The first reference agent uses the
   **Vercel AI SDK** and exposes its services over **MCP**

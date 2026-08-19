@@ -30,6 +30,15 @@ export const AGENT_RUNTIME_TOOL_ERROR_CODES = {
 export type AgentRuntimeToolErrorCode =
   (typeof AGENT_RUNTIME_TOOL_ERROR_CODES)[keyof typeof AGENT_RUNTIME_TOOL_ERROR_CODES];
 
+/** Structured error codes returned inside failed agent service responses. */
+export const AGENT_RUNTIME_CONTRACT_ERROR_CODES = {
+  REQUEST_INVALID: 'AGENT_RUNTIME_REQUEST_INVALID',
+  UNSUPPORTED_VERSION: 'AGENT_RUNTIME_UNSUPPORTED_VERSION',
+  SCHEMA_UNSUPPORTED: 'AGENT_RUNTIME_UNSUPPORTED_SCHEMA',
+} as const;
+export type AgentRuntimeContractErrorCode =
+  (typeof AGENT_RUNTIME_CONTRACT_ERROR_CODES)[keyof typeof AGENT_RUNTIME_CONTRACT_ERROR_CODES];
+
 /** Log levels supported by the runtime logger. */
 export const AGENT_LOG_LEVELS = ['debug', 'info', 'warn', 'error'] as const;
 export type AgentLogLevel = (typeof AGENT_LOG_LEVELS)[number];

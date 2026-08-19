@@ -11,7 +11,9 @@ skeleton, documentation, and CI) plus the start of the GOAT AgentKit
 integration: `packages/agent-kit` provides validated AgentKit configuration
 and initialization behind a clean internal interface, and `packages/agent-runtime`
 provides the minimal agent runtime (tool/action boundary, structured config,
-observability). No marketplace, payment, or identity functionality has been
+observability) and its model-agnostic service contract (versioned
+request/response envelopes, auth placeholders, and generated OpenAPI
+documentation). No marketplace, payment, or identity functionality has been
 implemented yet.
 
 ## Planned vision
@@ -119,7 +121,9 @@ database service checks) plus the GOAT AgentKit integration
 initialization of the action provider, policy engine, and execution runtime,
 and the minimal agent runtime (`packages/agent-runtime/src/*.test.ts`):
 configuration, tool schemas, success/failure paths, policy blocking,
-idempotency, health, and metrics/log observability. Run with `pnpm test`.
+idempotency, health, metrics/log observability, and the service contract
+(envelope schemas, Zod → JSON Schema conversion, OpenAPI generation, and
+end-to-end request/response handling). Run with `pnpm test`.
 
 ## Linting and formatting
 

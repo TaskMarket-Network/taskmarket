@@ -159,6 +159,30 @@ README for the full API):
 - `health()`, `listCapabilities()`, and `metricsSnapshot()` provide
   liveness/identity, capability, and in-process metrics introspection.
 
+Phase 1 also introduces the **agent service contract** in
+`src/contract/` (model- and transport-agnostic):
+
+- `createAgentService(runtime, options)` adapts an `AgentRuntime` into the
+  external contract boundary: `parseRequest(input)` validates the request
+  envelope at the trust boundary, `execute(input)` runs a request end to end
+  (always returning a structured response, never throwing on malformed input),
+  `capabilities()`, `health()`, and `openapi()`.
+- The request/response envelopes (`AgentServiceRequest` / `AgentServiceResponse`)
+  carry a `contractVersion` (currently `1.0.0`), a required `requestId` that is
+  echoed back, `tool`, `input`, `idempotencyKey`, bounded `timeoutMs`
+  (max 60 000 ms), `confirmed`, `caller`, and an `auth` placeholder. Unsupported
+  versions and malformed envelopes are rejected with structured
+  `AGENT_RUNTIME_*` error codes.
+- `buildAgentServiceOpenApi(...)` generates an **OpenAPI 3.1** document
+  (`/health`, `/capabilities`, `/tool`) directly from the registered tool Zod
+  schemas, so the documentation never drifts from the validated contract.
+- **Auth is a placeholder only and is not yet enforced.** Verification is
+  deferred to the phase that introduces TaskMarket accounts and ERC-8004
+  identity; raw credentials must never be sent through, logged, or stored.
+
+Only read-only tools are registered; the runtime never moves funds or writes to
+chain.
+
 Environment variables (safe defaults in `.env.example`):
 
 | Variable                          | Default                                       | Purpose                                            |
@@ -172,8 +196,7 @@ Environment variables (safe defaults in `.env.example`):
 | `AGENT_RUNTIME_LOG_LEVEL`         | `info`                                        | Minimum log level (`debug`/`info`/`warn`/`error`). |
 
 Only read-only tools are registered; the runtime never moves funds or writes to
-chain. The agent service contract (input/output schemas, versioning, auth,
-health) is introduced in step 01-04.
+chain.
 
 ## Project structure
 
