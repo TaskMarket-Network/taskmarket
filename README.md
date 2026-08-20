@@ -20,7 +20,12 @@ repository, its transport-agnostic registration API (register, update, read,
 disable, validate agent profiles behind a validated envelope with an ownership
 authorization boundary and generated OpenAPI), and capability discovery
 (searchable, ranked, paginated capabilities with a safe public projection).
-No marketplace, payment, or identity functionality has been implemented yet.
+`apps/web` is the first usable **agent registry dashboard**: browse/search
+active agents, view agent profiles (capabilities, endpoints, pricing,
+registration state), and register/manage your own agents behind the same
+authorization boundary, with clear testnet/development labeling and no
+invented on-chain data. No marketplace, payment, or identity functionality has
+been implemented yet.
 
 ## Planned vision
 
@@ -78,32 +83,36 @@ onboarding guide.
 
 All commands run from the repository root using pnpm.
 
-| Task               | Command             |
-| ------------------ | ------------------- |
-| Verify environment | `pnpm preflight`    |
-| Validate env       | `pnpm check:env`    |
-| Format code        | `pnpm format`       |
-| Check formatting   | `pnpm format:check` |
-| Lint               | `pnpm lint`         |
-| Type check         | `pnpm typecheck`    |
-| Run tests          | `pnpm test`         |
-| Run tests (watch)  | `pnpm test:watch`   |
-| All checks         | `pnpm check`        |
-| Start local DB     | `pnpm db:up`        |
-| Stop local DB      | `pnpm db:down`      |
-| Local DB logs      | `pnpm db:logs`      |
-| Check local DB     | `pnpm db:check`     |
-| Apply migrations   | `pnpm db:migrate`   |
+| Task               | Command                             |
+| ------------------ | ----------------------------------- |
+| Verify environment | `pnpm preflight`                    |
+| Validate env       | `pnpm check:env`                    |
+| Format code        | `pnpm format`                       |
+| Check formatting   | `pnpm format:check`                 |
+| Lint               | `pnpm lint`                         |
+| Type check         | `pnpm typecheck`                    |
+| Run tests          | `pnpm test`                         |
+| Run tests (watch)  | `pnpm test:watch`                   |
+| All checks         | `pnpm check`                        |
+| Start local DB     | `pnpm db:up`                        |
+| Stop local DB      | `pnpm db:down`                      |
+| Local DB logs      | `pnpm db:logs`                      |
+| Check local DB     | `pnpm db:check`                     |
+| Apply migrations   | `pnpm db:migrate`                   |
+| Run the dashboard  | `pnpm --filter @taskmarket/web dev` |
 
 `pnpm check` runs formatting checks, linting, type checking, and tests in
 sequence. The database commands require Docker and are documented in
-[docs/development.md](docs/development.md).
+[docs/development.md](docs/development.md). The dashboard is a Next.js app that
+reads the registry database directly (the local DB must be up and migrated); it
+uses its own `typecheck` and `build` scripts under `apps/web`.
 
 ## Project structure
 
 ```
 taskmarket/
-├── apps/        # Planned: frontend / backend application deployments
+├── apps/
+│   └── web/      # Agent registry dashboard (Next.js: browse + manage agents)
 ├── packages/
 │   ├── agent-kit/ # GOAT AgentKit integration (config, policy, runtime)
 │   ├── agent-runtime/ # Minimal agent runtime (tool/action boundary)
@@ -136,8 +145,12 @@ end-to-end request/response handling), and the agent registry
 status transitions, the in-memory repository, the registration API service
 (authorization boundary, idempotent create, optimistic concurrency, validate),
 capability discovery (normalization, filtering, ranking, pagination, safe
-projection), the migration runner, and a PostgreSQL integration test (skipped
-when the database is unreachable). Run with `pnpm test`.
+projection), the migration runner, a PostgreSQL integration test (skipped
+when the database is unreachable), and the dashboard
+(`apps/web/lib/*.test.ts`): form/input parsing, safe display projections
+(endpoint metadata stripped), structured error → HTTP mapping, and an
+integration test for the dashboard's server adapter (register → update →
+disable → discovery against a real database). Run with `pnpm test`.
 
 ## Linting and formatting
 

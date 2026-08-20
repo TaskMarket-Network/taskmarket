@@ -100,6 +100,8 @@ export {
   type CapabilityDiscoveryResponse,
   type CapabilityDiscoveryResult,
   type CapabilityDiscoveryService,
+  type CapabilityDiscoverySortBy,
+  type CapabilityDiscoverySortDirection,
   type CapabilityEndpoint,
   type NormalizedCapability,
 } from './discovery/index.js';

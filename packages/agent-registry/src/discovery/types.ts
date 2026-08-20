@@ -6,12 +6,20 @@ import type {
   capabilityDiscoveryItemSchema,
   capabilityDiscoveryQuerySchema,
   capabilityDiscoveryResultSchema,
+  capabilityDiscoverySortBySchema,
+  capabilityDiscoverySortDirectionSchema,
 } from './schemas.js';
 import type { CapabilityDiscoveryOpenApiDocument } from './openapi.js';
 import type { AgentRegistryRepository } from '../repository.js';
 
 /** A validated capability discovery query. */
 export type CapabilityDiscoveryQuery = z.infer<typeof capabilityDiscoveryQuerySchema>;
+
+/** Ranking inputs: the sort field and direction used to order results. */
+export type CapabilityDiscoverySortBy = z.infer<typeof capabilityDiscoverySortBySchema>;
+export type CapabilityDiscoverySortDirection = z.infer<
+  typeof capabilityDiscoverySortDirectionSchema
+>;
 
 /** Safe discovery projection of an active registered agent. */
 export type CapabilityDiscoveryItem = z.infer<typeof capabilityDiscoveryItemSchema>;

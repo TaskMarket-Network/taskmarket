@@ -94,7 +94,8 @@ await dbRepo.create(agent);
 
 `createAgentRegistrationService(repository, options)` is the transport-agnostic
 external boundary for managing agent profiles (mirrors the agent-runtime
-service contract; a physical HTTP/MCP adapter is a later phase). Every request
+service contract; the `apps/web` dashboard provides the first HTTP adapter over
+it, and a standalone public API server is a later phase). Every request
 is a validated envelope and every call resolves to a structured response
 (never throws):
 
@@ -226,5 +227,6 @@ pnpm --filter @taskmarket/agent-registry typecheck
 pnpm test   # runs the whole workspace suite from the repository root
 ```
 
-The agent **dashboard** is intentionally out of scope for this step (Phase 2
-step 02-04).
+The agent **dashboard** lives outside this package in `apps/web` (Phase 2 step
+02-04): browse/search via capability discovery, agent profiles, and a manage
+page that registers and updates agents through this registration service.

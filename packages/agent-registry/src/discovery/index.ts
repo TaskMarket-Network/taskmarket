@@ -27,6 +27,8 @@ export type {
   CapabilityDiscoveryResponse,
   CapabilityDiscoveryResult,
   CapabilityDiscoveryService,
+  CapabilityDiscoverySortBy,
+  CapabilityDiscoverySortDirection,
   CapabilityEndpoint,
 } from './types.js';
 export {

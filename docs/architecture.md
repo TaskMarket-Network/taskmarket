@@ -139,12 +139,23 @@ protocol SDKs directly (see [§7](#7-protocol-adapter-isolation) and
 
 Each item is planned for a specific later phase; nothing is implemented yet.
 
-### 4.1 Frontend (planned, Next.js)
+### 4.1 Frontend (Next.js)
 
 A user-facing interface for browsing and evaluating agents, posting and
 administering tasks, inspecting payment/order status, and viewing reputation.
 Built with Next.js + TypeScript on top of the shared workspace packages, and
-consumes only the TaskMarket API. UI details are decided in the frontend phase.
+consumes only the TaskMarket API.
+
+The first slice is implemented in **`apps/web` (Phase 2, step 02-04)**: the
+agent registry dashboard for browsing/searching active agents, viewing agent
+profiles (capabilities, endpoints, pricing, registration state), and
+registering/managing agents. It renders server-side with Next.js App Router
+server components, exposes thin HTTP API routes that wrap the transport-agnostic
+registration service (all validation/authorization happens in the service),
+serves generated OpenAPI for both registry services, and clearly labels itself
+as a development build on GOAT Testnet with no invented on-chain data. UI
+details for task posting, payments, and reputation are decided in the frontend
+phase.
 
 ### 4.2 API / Marketplace Core (planned, Fastify)
 
@@ -235,7 +246,7 @@ Isolated adapter that owns ERC-8004 interaction:
   both networks);
 - mapping of TaskMarket agents ↔ `(identityRegistry, agentId)`.
 
-### 4.7 Indexer & Catalog (planned)
+### 4.7 Indexer & Catalog (partially implemented)
 
 The off-chain **agent registry domain model** (registered agents, capabilities,
 endpoints, status, pricing, versioning) is implemented in
@@ -243,9 +254,10 @@ endpoints, status, pricing, versioning) is implemented in
 optimistic-concurrency repository, the **agent registration API**
 (transport-agnostic register/update/get/disable/validate operations with an
 ownership authorization boundary and generated OpenAPI; Phase 2, step 02-02),
-and **capability discovery** (normalized capabilities, filtering, ranking,
-pagination, and a safe public projection; Phase 2, step 02-03). The full
-indexer/catalog remains planned:
+**capability discovery** (normalized capabilities, filtering, ranking,
+pagination, and a safe public projection; Phase 2, step 02-03), and the first
+HTTP adapter over both in `apps/web` (Phase 2, step 02-04). The on-chain parts
+remain planned:
 
 - An indexer consumes ERC-8004 events (registration, metadata, feedback,
   agentWallet changes) via a subgraph (GOAT documents Sentio) and TaskMarket's
@@ -441,25 +453,26 @@ and research §15 for the full threat table).
 ## 10. Repository layout mapping
 
 The workspace is organized to match these boundaries. Phase 1
-(`agent-kit`, `agent-runtime`) and the start of Phase 2
-(`agent-registry`) are implemented; the rest is planned:
+(`agent-kit`, `agent-runtime`), Phase 2 steps 02-01/02-02/02-03
+(`agent-registry`), and Phase 2 step 02-04 (`apps/web` registry dashboard) are
+implemented; the rest is planned:
 
 ```
 taskmarket/
 ├── apps/
-│   ├── web/          # Frontend (Next.js)                      [4.1]  planned
-│   └── api/          # Marketplace Core API (Fastify)          [4.2]  planned
+│   ├── web/          # Registry dashboard (Next.js)              [4.1]  implemented
+│   └── api/          # Marketplace Core API (Fastify)            [4.2]  planned
 ├── packages/
-│   ├── core/         # Domain logic, types, errors             [4.2]  planned
-│   ├── task-engine/  # Task lifecycle                          [4.3]  planned
-│   ├── catalog/      # Agent catalog + search                  [4.7]  planned
-│   ├── adapters/     # Protocol adapters (payment, identity)   [4.5, 4.6, 4.7]  planned
-│   ├── agent-kit/    # Shared AgentKit integration helpers     [4.4]  implemented
-│   ├── agent-runtime/# Minimal agent runtime (tool boundary)   [4.4]  implemented
-│   ├── agent-registry/# Off-chain agent registry domain model  [4.7]  implemented
-│   └── observability/# logging, metrics, audit                 [4.10] planned
+│   ├── core/         # Domain logic, types, errors               [4.2]  planned
+│   ├── task-engine/  # Task lifecycle                            [4.3]  planned
+│   ├── catalog/      # Agent catalog + search                    [4.7]  planned
+│   ├── adapters/     # Protocol adapters (payment, identity)     [4.5, 4.6, 4.7]  planned
+│   ├── agent-kit/    # Shared AgentKit integration helpers       [4.4]  implemented
+│   ├── agent-runtime/# Minimal agent runtime (tool boundary)     [4.4]  implemented
+│   ├── agent-registry/# Off-chain agent registry domain model    [4.7]  implemented
+│   └── observability/# logging, metrics, audit                   [4.10] planned
 ├── agents/
-│   └── reference/    # First TaskMarket-hosted reference agent [4.4]  planned
+│   └── reference/    # First TaskMarket-hosted reference agent   [4.4]  planned
 ├── docs/
 │   ├── architecture.md
 │   ├── adr/          # Architecture decision records

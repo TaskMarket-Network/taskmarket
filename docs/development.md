@@ -87,9 +87,10 @@ reporting success.
 ## Local database stack
 
 PostgreSQL and Redis run locally via Docker Compose (see
-[docker-compose.dev.yml](../docker-compose.dev.yml)). Both are provisioned but
-no application code consumes them yet; they are used by later phases for
-application state, idempotency, queues, and rate limiting (ADR-0005).
+[docker-compose.dev.yml](../docker-compose.dev.yml)). PostgreSQL is consumed by
+the agent registry (migrations, persistence) and the `apps/web` dashboard;
+Redis is provisioned but not yet consumed by application code — it will back
+idempotency, queues, and rate limiting in later phases (ADR-0005).
 
 | Command         | Purpose                                                                        |
 | --------------- | ------------------------------------------------------------------------------ |
@@ -121,18 +122,19 @@ key, check constraints, and an immutable-field trigger.
 
 ## Daily workflow
 
-| Task               | Command              |
-| ------------------ | -------------------- |
-| Verify environment | `pnpm preflight`     |
-| Format code        | `pnpm format`        |
-| Check formatting   | `pnpm format:check`  |
-| Lint               | `pnpm lint`          |
-| Type check         | `pnpm typecheck`     |
-| Run tests          | `pnpm test`          |
-| Run tests (watch)  | `pnpm test:watch`    |
-| Validate env       | `pnpm check:env`     |
-| Check GOAT RPC     | `pnpm check:network` |
-| All checks         | `pnpm check`         |
+| Task               | Command                             |
+| ------------------ | ----------------------------------- |
+| Verify environment | `pnpm preflight`                    |
+| Format code        | `pnpm format`                       |
+| Check formatting   | `pnpm format:check`                 |
+| Lint               | `pnpm lint`                         |
+| Type check         | `pnpm typecheck`                    |
+| Run tests          | `pnpm test`                         |
+| Run tests (watch)  | `pnpm test:watch`                   |
+| Validate env       | `pnpm check:env`                    |
+| Check GOAT RPC     | `pnpm check:network`                |
+| All checks         | `pnpm check`                        |
+| Run the dashboard  | `pnpm --filter @taskmarket/web dev` |
 
 `pnpm check` runs formatting checks, linting, type checking, and tests in
 sequence. It does not require the database stack.
@@ -231,8 +233,9 @@ registry domain model (see the package README for the full API):
   `disable`, and `validate` operations behind a validated request/response
   envelope with an ownership authorization boundary (`principal` must match
   `ownerRef`), idempotent `register`, optimistic-concurrency `update`/`disable`,
-  and generated OpenAPI 3.1 documentation. A physical HTTP/MCP adapter is a
-  later phase.
+  and generated OpenAPI 3.1 documentation. The dashboard in `apps/web` is the
+  first physical HTTP adapter over this contract; a standalone public API
+  service is a later phase.
 - `createCapabilityDiscoveryService(repository)` — **capability discovery**
   (Phase 2, step 02-03): searchable, ranked, paginated agent capabilities with
   a normalized capability representation (`normalizeCapability`), AND/any/text
@@ -252,11 +255,57 @@ Environment variables (safe defaults in `.env.example`):
 The registry is **off-chain catalog state only** and is not ERC-8004 identity;
 protocol identity is introduced in a later phase.
 
+## Agent registry dashboard (`apps/web`)
+
+Phase 2, step 02-04 introduces `apps/web`, a **Next.js (App Router)**
+dashboard for browsing and managing registered agents:
+
+- **Browse** (`/`): search active agents by text, capability keys (AND), and
+  namespaces (any), with ranking inputs (`sortBy`/`sortDirection`) and
+  pagination. The page is a server component that queries the capability
+  discovery service over the Postgres repository; the search panel is a small
+  client component that navigates with URL parameters (works without JS).
+- **Profile** (`/agents/[id]`): capabilities, endpoints (type + URL, rendered
+  reference-only — the page never fetches them), pricing, and registration
+  state (status/version/timestamps) with clear status and visibility labeling.
+- **Manage** (`/manage`): register a new agent (with local + server
+  validation), and activate/disable/edit your own agents. The dashboard
+  operates as a development principal (`AGENT_DASHBOARD_PRINCIPAL`, default
+  `dev-owner`) and `ownerRef` is forced to match it, so the registry's
+  ownership authorization boundary is always exercised. Real authentication is
+  a later phase.
+- **API routes** (`/api/agents`, `/api/agents/[id]`, `/api/agents/[id]/disable`)
+  are thin HTTP adapters that build the registration envelope and delegate to
+  the transport-agnostic `createAgentRegistrationService` — all validation and
+  authorization still happens in the service. Structured errors map to HTTP
+  statuses (400/403/404/409/422/500) and internal/database messages never leak
+  to clients.
+- **Development labeling**: a banner marks the build as development / GOAT
+  Testnet and states that on-chain identity (ERC-8004) and payments are not
+  active; pages never invent on-chain data.
+- The dashboard reads `DATABASE_URL` directly (the local DB must be up and
+  migrated). OpenAPI documents for both services are served at
+  `/api/registry/openapi` and `/api/discovery/openapi`.
+
+Run it:
+
+```sh
+pnpm db:up && pnpm db:migrate   # once: local database
+pnpm --filter @taskmarket/web dev     # http://localhost:3000
+pnpm --filter @taskmarket/web typecheck
+pnpm --filter @taskmarket/web build
+```
+
+`pnpm test` from the root also runs the dashboard's unit tests
+(`apps/web/lib/*.test.ts`) and its server-adapter integration test (skipped
+when the database is unreachable).
+
 ## Project structure
 
 ```
 taskmarket/
-├── apps/        # Planned: frontend / backend application deployments
+├── apps/
+│   └── web/      # Agent registry dashboard (Next.js: browse + manage agents)
 ├── packages/
 │   ├── agent-kit/ # GOAT AgentKit integration (config, policy, runtime)
 │   ├── agent-runtime/ # Minimal agent runtime (tool/action boundary)
