@@ -233,6 +233,12 @@ registry domain model (see the package README for the full API):
   `ownerRef`), idempotent `register`, optimistic-concurrency `update`/`disable`,
   and generated OpenAPI 3.1 documentation. A physical HTTP/MCP adapter is a
   later phase.
+- `createCapabilityDiscoveryService(repository)` — **capability discovery**
+  (Phase 2, step 02-03): searchable, ranked, paginated agent capabilities with
+  a normalized capability representation (`normalizeCapability`), AND/any/text
+  filtering, ranking inputs (`sortBy`/`sortDirection`), pagination, a safe
+  discovery projection (endpoint metadata stripped; only `active` agents), and
+  generated OpenAPI 3.1 documentation.
 - The schema is created by `pnpm db:migrate`
   (`packages/agent-registry/migrations/001_agent_registry.sql`); the database
   rejects changes to immutable fields via a trigger.

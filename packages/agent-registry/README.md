@@ -40,6 +40,13 @@ introduced in a later phase.
   exposes `register`, `update`, `get`, `disable`, and `validate` operations
   behind a validated request/response envelope, plus generated OpenAPI 3.1
   documentation. See [Agent Registration API](#agent-registration-api) below.
+- **Capability Discovery** (`src/discovery/`): searchable, ranked, paginated
+  agent capabilities (Phase 2, step 02-03). `normalizeCapability` provides the
+  normalized capability representation, `searchCapabilities` is the pure
+  filtering/ranking/pagination core, and
+  `createCapabilityDiscoveryService(repository)` is the read-only public
+  boundary with generated OpenAPI. See
+  [Capability Discovery](#capability-discovery) below.
 - **Migration** (`migrations/001_agent_registry.sql`): the `agents` table with
   `PRIMARY KEY`, `NOT NULL`, `CHECK` constraints (status enum, `version >= 1`,
   non-empty `owner_ref`/`name`), an owner index, and the
@@ -143,6 +150,49 @@ Security posture:
 action) whose schemas are derived from the same Zod schemas, so the docs never
 drift from the validated contract.
 
+## Capability Discovery
+
+`createCapabilityDiscoveryService(repository, options)` is the read-only,
+transport-agnostic public boundary for searching agent capabilities:
+
+```ts
+import { createCapabilityDiscoveryService } from '@taskmarket/agent-registry';
+
+const discovery = createCapabilityDiscoveryService(dbRepo);
+const { ok, result } = await discovery.query({
+  capabilities: ['wallet:read'], // every requested key (AND)
+  namespaces: ['storage'], // at least one (any)
+  query: 'trade', // case-insensitive text over name/description/keys
+  sortBy: 'relevance', // relevance | updatedAt | createdAt | name | version
+  sortDirection: 'desc',
+  limit: 20, // 1..100
+  offset: 0,
+});
+```
+
+Semantics and safety:
+
+- **Normalized capabilities**: `normalizeCapability('wallet:read')` →
+  `{ key: 'wallet:read', namespace: 'wallet', name: 'read' }` (or `null` when
+  invalid). Keys are matched as **opaque identifiers** — never interpreted as
+  instructions to execute.
+- **Filters** combine with AND: capability keys (exact, every requested key),
+  namespaces (any), and free-text `query`. An empty query lists all active
+  agents (browse).
+- **Ranking inputs**: `sortBy` + `sortDirection`; `relevance` counts matched
+  capability/namespace hits and is the default. Ordering is deterministic
+  (id tiebreak).
+- **Pagination**: `limit`/`offset` with an accurate `total`.
+- **Safe projection**: only `active` agents are returned, and endpoint
+  `metadata` is deliberately **stripped** so arbitrary untrusted metadata never
+  becomes executable instructions. Discovery never fetches or executes
+  endpoint URLs (reachability checking is a later step). Search runs in pure
+  code over `repository.listAll()` — no dynamic SQL, so no query-string
+  injection surface.
+- The query is validated at the trust boundary (Zod strict, bounded
+  `limit`/`offset`/filter-array sizes); `query()` never throws — malformed
+  input and repository failures return structured errors.
+
 ## Migrations
 
 ```sh
@@ -161,11 +211,13 @@ Domain logic is fully deterministic when a clock and id factories are injected
 (`deps.clock`, `deps.agentIdFactory`, `deps.endpointIdFactory`). Tests cover
 creation, mutable/immutable split, status transitions, input validation
 (including SSRF-guarded URLs and pricing bounds), optimistic version conflicts,
-the in-memory repository, and the registration API service (authorization,
-idempotency, concurrency, validate, robustness). A PostgreSQL **integration**
-test (`src/postgres.integration.test.ts`) applies the migration in an isolated
-schema, exercises the repository, and verifies the immutable-field trigger; it
-is skipped automatically when the database is unreachable.
+the in-memory repository, the registration API service (authorization,
+idempotency, concurrency, validate, robustness), and capability discovery
+(normalization, filtering, ranking, pagination, safe projection). A PostgreSQL
+**integration** test (`src/postgres.integration.test.ts`) applies the migration
+in an isolated schema, exercises the repository, and verifies the
+immutable-field trigger; it is skipped automatically when the database is
+unreachable.
 
 ## Development
 
@@ -174,5 +226,5 @@ pnpm --filter @taskmarket/agent-registry typecheck
 pnpm test   # runs the whole workspace suite from the repository root
 ```
 
-Capability **discovery** and the agent **dashboard** are intentionally out of
-scope for this step (Phase 2 steps 02-03, 02-04).
+The agent **dashboard** is intentionally out of scope for this step (Phase 2
+step 02-04).

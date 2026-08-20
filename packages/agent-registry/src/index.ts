@@ -74,6 +74,36 @@ export {
   type JsonSchema,
 } from './api/index.js';
 
+export {
+  buildCapabilityDiscoveryOpenApi,
+  capabilityNamespace,
+  capabilityDiscoveryErrorSchema,
+  capabilityDiscoveryItemSchema,
+  capabilityDiscoveryQuerySchema,
+  capabilityDiscoveryResultSchema,
+  capabilityDiscoverySortBySchema,
+  capabilityDiscoverySortDirectionSchema,
+  capabilityNamespaceSchema,
+  createCapabilityDiscoveryService,
+  normalizeCapability,
+  searchCapabilities,
+  CAPABILITY_DISCOVERY_API_SUPPORTED_VERSIONS,
+  CAPABILITY_DISCOVERY_API_VERSION,
+  type CapabilityDiscoveryApiContractVersion,
+  type CapabilityDiscoveryError,
+  type CapabilityDiscoveryItem,
+  type CapabilityDiscoveryOpenApiDocument,
+  type CapabilityDiscoveryOpenApiOptions,
+  type CapabilityDiscoveryOptions,
+  type CapabilityDiscoveryParseResult,
+  type CapabilityDiscoveryQuery,
+  type CapabilityDiscoveryResponse,
+  type CapabilityDiscoveryResult,
+  type CapabilityDiscoveryService,
+  type CapabilityEndpoint,
+  type NormalizedCapability,
+} from './discovery/index.js';
+
 export type {
   AgentEndpoint,
   AgentEndpointInput,

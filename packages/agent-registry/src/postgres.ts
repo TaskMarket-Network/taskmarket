@@ -131,6 +131,11 @@ export class PostgresAgentRegistryRepository implements AgentRegistryRepository 
     return row === undefined ? null : toDomainAgent(row);
   }
 
+  async listAll(): Promise<RegisteredAgent[]> {
+    const rows = await this.query<AgentRow>(`select * from ${this.agentsTable}`);
+    return rows.map(toDomainAgent);
+  }
+
   async listByOwner(ownerRef: string): Promise<RegisteredAgent[]> {
     const rows = await this.query<AgentRow>(
       `select * from ${this.agentsTable} where owner_ref = $1 order by created_at asc`,

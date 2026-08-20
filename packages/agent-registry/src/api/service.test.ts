@@ -37,6 +37,9 @@ class BrokenRepository implements AgentRegistryRepository {
   getById(): Promise<RegisteredAgent | null> {
     throw new Error('unexpected failure');
   }
+  listAll(): Promise<RegisteredAgent[]> {
+    throw new Error('unexpected failure');
+  }
   listByOwner(): Promise<RegisteredAgent[]> {
     throw new Error('unexpected failure');
   }

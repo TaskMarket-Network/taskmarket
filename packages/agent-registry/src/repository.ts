@@ -15,6 +15,8 @@ export interface AgentRegistryRepository {
   create(agent: RegisteredAgent): Promise<RegisteredAgent>;
   /** Load an agent by id, or `null` when it does not exist. */
   getById(id: string): Promise<RegisteredAgent | null>;
+  /** List all agents (unspecified order); used by capability discovery. */
+  listAll(): Promise<RegisteredAgent[]>;
   /** List all agents owned by the given owner reference (oldest first). */
   listByOwner(ownerRef: string): Promise<RegisteredAgent[]>;
   /**
@@ -43,6 +45,10 @@ export class InMemoryAgentRegistryRepository implements AgentRegistryRepository 
 
   async getById(id: string): Promise<RegisteredAgent | null> {
     return this.store.get(id) ?? null;
+  }
+
+  async listAll(): Promise<RegisteredAgent[]> {
+    return [...this.store.values()];
   }
 
   async listByOwner(ownerRef: string): Promise<RegisteredAgent[]> {

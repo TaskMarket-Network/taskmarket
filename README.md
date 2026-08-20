@@ -16,10 +16,11 @@ request/response envelopes, auth placeholders, and generated OpenAPI
 documentation). `packages/agent-registry` introduces the off-chain agent
 registry domain model (registered agents, capabilities, endpoints, status,
 pricing, versioning) with a PostgreSQL migration and optimistic-concurrency
-repository, and its transport-agnostic registration API (register, update,
-read, disable, validate agent profiles behind a validated envelope with an
-ownership authorization boundary and generated OpenAPI). No marketplace,
-payment, or identity functionality has been implemented yet.
+repository, its transport-agnostic registration API (register, update, read,
+disable, validate agent profiles behind a validated envelope with an ownership
+authorization boundary and generated OpenAPI), and capability discovery
+(searchable, ranked, paginated capabilities with a safe public projection).
+No marketplace, payment, or identity functionality has been implemented yet.
 
 ## Planned vision
 
@@ -134,8 +135,9 @@ end-to-end request/response handling), and the agent registry
 (`packages/agent-registry/src/*.test.ts`): domain logic, input validation,
 status transitions, the in-memory repository, the registration API service
 (authorization boundary, idempotent create, optimistic concurrency, validate),
-the migration runner, and a PostgreSQL integration test (skipped when the
-database is unreachable). Run with `pnpm test`.
+capability discovery (normalization, filtering, ranking, pagination, safe
+projection), the migration runner, and a PostgreSQL integration test (skipped
+when the database is unreachable). Run with `pnpm test`.
 
 ## Linting and formatting
 

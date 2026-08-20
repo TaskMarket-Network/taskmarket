@@ -37,6 +37,16 @@ describe('InMemoryAgentRegistryRepository', () => {
     await expect(repo.create(agent)).rejects.toThrow(AgentRegistryDuplicateError);
   });
 
+  it('lists all agents', async () => {
+    const repo = new InMemoryAgentRegistryRepository();
+    const a = createRegisteredAgent({ ...BASE_INPUT, id: 'a', name: 'A' }, deps);
+    const b = createRegisteredAgent({ ...BASE_INPUT, id: 'b', name: 'B' }, deps);
+    await repo.create(b);
+    await repo.create(a);
+    const all = await repo.listAll();
+    expect(all.map((agent) => agent.id).sort()).toEqual(['a', 'b']);
+  });
+
   it('lists agents by owner oldest first', async () => {
     const repo = new InMemoryAgentRegistryRepository();
     const a = createRegisteredAgent(

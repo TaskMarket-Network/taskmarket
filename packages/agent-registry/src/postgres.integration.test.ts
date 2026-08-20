@@ -121,6 +121,13 @@ describeDb('PostgresAgentRegistryRepository (integration)', () => {
     expect(await repo2.listByOwner('no-such-owner')).toEqual([]);
   });
 
+  it('lists all agents for capability discovery', async () => {
+    const agent = createRegisteredAgent(BASE_INPUT, deps);
+    await repo.create(agent);
+    const all = await repo.listAll();
+    expect(all.some((entry) => entry.id === agent.id)).toBe(true);
+  });
+
   it('saves an updated agent with optimistic version control', async () => {
     const agent = createRegisteredAgent(BASE_INPUT, deps);
     await repo.create(agent);
