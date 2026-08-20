@@ -19,9 +19,7 @@ export type MarketplaceSearchQuery = z.infer<typeof marketplaceSearchQuerySchema
 
 /** Ranking inputs: the sort field and direction used to order results. */
 export type MarketplaceSearchSortBy = z.infer<typeof marketplaceSearchSortBySchema>;
-export type MarketplaceSearchSortDirection = z.infer<
-  typeof marketplaceSearchSortDirectionSchema
->;
+export type MarketplaceSearchSortDirection = z.infer<typeof marketplaceSearchSortDirectionSchema>;
 
 /** One ranked signal behind a listing's score. */
 export type MarketplaceSearchSignal = z.infer<typeof marketplaceSearchSignalSchema>;
@@ -40,13 +38,11 @@ export type MarketplaceSearchError = z.infer<typeof marketplaceSearchErrorSchema
 
 /** Discriminated result of parsing a search query at the trust boundary. */
 export type MarketplaceSearchParseResult =
-  | { ok: true; query: MarketplaceSearchQuery }
-  | { ok: false; error: MarketplaceSearchError };
+  { ok: true; query: MarketplaceSearchQuery } | { ok: false; error: MarketplaceSearchError };
 
 /** Discriminated response of a search query (never throws). */
 export type MarketplaceSearchResponse =
-  | { ok: true; result: MarketplaceSearchResult }
-  | { ok: false; error: MarketplaceSearchError };
+  { ok: true; result: MarketplaceSearchResult } | { ok: false; error: MarketplaceSearchError };
 
 /**
  * The transport-agnostic marketplace search service: searchable, filterable,

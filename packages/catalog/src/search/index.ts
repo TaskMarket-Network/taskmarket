@@ -9,7 +9,10 @@ export {
   createMarketplaceCatalogSearchService,
   type MarketplaceCatalogSearchOptions,
 } from './service.js';
-export type { MarketplaceCatalogSearchOpenApiDocument, MarketplaceCatalogSearchOpenApiOptions } from './openapi.js';
+export type {
+  MarketplaceCatalogSearchOpenApiDocument,
+  MarketplaceCatalogSearchOpenApiOptions,
+} from './openapi.js';
 export type {
   MarketplaceCatalogSearchService,
   MarketplaceSearchError,

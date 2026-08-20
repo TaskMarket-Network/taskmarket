@@ -43,11 +43,13 @@ const signal = (
   ...(note === undefined ? {} : { note }),
 });
 
-const has = (value: string | undefined): value is string =>
-  value !== undefined && value.length > 0;
+const has = (value: string | undefined): value is string => value !== undefined && value.length > 0;
 
 /** Fraction of the requested capability keys the listing offers (0..1). */
-function capabilityRelevanceValue(listing: MarketplaceListing, query: MarketplaceSearchQuery): number {
+function capabilityRelevanceValue(
+  listing: MarketplaceListing,
+  query: MarketplaceSearchQuery,
+): number {
   const requested = query.capabilities ?? [];
   if (requested.length === 0) {
     return 0;
@@ -58,7 +60,10 @@ function capabilityRelevanceValue(listing: MarketplaceListing, query: Marketplac
 }
 
 /** Fraction of the requested namespaces the listing offers (0..1). */
-function namespaceRelevanceValue(listing: MarketplaceListing, query: MarketplaceSearchQuery): number {
+function namespaceRelevanceValue(
+  listing: MarketplaceListing,
+  query: MarketplaceSearchQuery,
+): number {
   const requested = query.namespaces ?? [];
   if (requested.length === 0) {
     return 0;
@@ -82,12 +87,7 @@ function textRelevanceValue(
   if (!has(needle)) {
     return 0;
   }
-  const haystack = [
-    listing.title,
-    listing.description,
-    agentName,
-    ...listing.capabilities,
-  ]
+  const haystack = [listing.title, listing.description, agentName, ...listing.capabilities]
     .join(' ')
     .toLowerCase();
   return haystack.includes(needle.toLowerCase()) ? 1 : 0;
@@ -156,7 +156,11 @@ export function scoreListing(
 
   if (has(query.query)) {
     signals.push(
-      signal('textRelevance', textRelevanceValue(listing, agentName, query), MARKETPLACE_SEARCH_WEIGHTS.textRelevance),
+      signal(
+        'textRelevance',
+        textRelevanceValue(listing, agentName, query),
+        MARKETPLACE_SEARCH_WEIGHTS.textRelevance,
+      ),
     );
   }
 

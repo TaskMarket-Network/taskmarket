@@ -88,8 +88,7 @@ describe('scoreListing', () => {
     expect(rating?.value).toBe(1); // rating 5.0 / 5
     expect(completion?.value).toBe(1); // 100 / 100
     // Even at perfect self-reported values, their combined contribution is tiny.
-    const selfReportedTotal =
-      (rating?.contribution ?? 0) + (completion?.contribution ?? 0);
+    const selfReportedTotal = (rating?.contribution ?? 0) + (completion?.contribution ?? 0);
     expect(selfReportedTotal).toBeLessThan(0.41);
     expect(ranking.explanation).toContain('self-reported; down-weighted');
   });
@@ -117,8 +116,18 @@ describe('scoreListing', () => {
 
   it('rewards text relevance when a query is present', () => {
     const listing = baseListing();
-    const hit = scoreListing(listing, 'Limit Order Agent', { ...emptyQuery(), query: 'limit' }, NOW);
-    const miss = scoreListing(listing, 'Limit Order Agent', { ...emptyQuery(), query: 'zebra' }, NOW);
+    const hit = scoreListing(
+      listing,
+      'Limit Order Agent',
+      { ...emptyQuery(), query: 'limit' },
+      NOW,
+    );
+    const miss = scoreListing(
+      listing,
+      'Limit Order Agent',
+      { ...emptyQuery(), query: 'zebra' },
+      NOW,
+    );
     expect(hit.signals.find((s) => s.name === 'textRelevance')?.value).toBe(1);
     expect(miss.signals.find((s) => s.name === 'textRelevance')?.value).toBe(0);
   });

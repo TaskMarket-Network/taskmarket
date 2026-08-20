@@ -2,11 +2,7 @@ import { z } from 'zod';
 
 import { agentCapabilitySchema } from '@taskmarket/agent-registry';
 
-import {
-  listingAvailabilitySchema,
-  listingPricingSchema,
-  listingTrustSchema,
-} from '../schemas.js';
+import { listingAvailabilitySchema, listingPricingSchema, listingTrustSchema } from '../schemas.js';
 import { MARKETPLACE_CATALOG_SEARCH_API_VERSION } from './version.js';
 
 /** Ranking inputs: the sort field and direction used to order results. */

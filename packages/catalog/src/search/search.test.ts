@@ -45,8 +45,7 @@ const query = (overrides: Partial<MarketplaceSearchQuery> = {}): MarketplaceSear
   ...overrides,
 });
 
-const ids = (result: MarketplaceSearchResult): string[] =>
-  result.items.map((item) => item.id);
+const ids = (result: MarketplaceSearchResult): string[] => result.items.map((item) => item.id);
 
 describe('searchMarketplaceListings', () => {
   it('only returns published listings', () => {
@@ -70,7 +69,7 @@ describe('searchMarketplaceListings', () => {
     expect(result.total).toBe(2);
   });
 
-  it('filters by capabilities with AND semantics', () => {
+  it('filters by capabilities with any-match semantics (partial matches rank lower)', () => {
     const listings = [
       makeListing({ id: 'a', capabilities: ['trades:create', 'agent:meta'] }),
       makeListing({ id: 'b', agentId: 'agent-0002', capabilities: ['storage:write'] }),
@@ -109,41 +108,46 @@ describe('searchMarketplaceListings', () => {
         pricing: [{ name: 'per gb', currency: 'USD', amount: '1.00' }],
       }),
     ];
-    expect(ids(searchMarketplaceListings(listings, agentNames, query({ agentId: 'agent-0002' }), NOW))).toEqual(['b']);
+    expect(
+      ids(searchMarketplaceListings(listings, agentNames, query({ agentId: 'agent-0002' }), NOW)),
+    ).toEqual(['b']);
     expect(
       ids(searchMarketplaceListings(listings, agentNames, query({ availability: 'limited' }), NOW)),
     ).toEqual(['b']);
     expect(
-      ids(
-        searchMarketplaceListings(
-          listings,
-          agentNames,
-          query({ pricingCurrency: 'USD' }),
-          NOW,
-        ),
-      ),
+      ids(searchMarketplaceListings(listings, agentNames, query({ pricingCurrency: 'USD' }), NOW)),
     ).toEqual(['b']);
   });
 
   it('searches text over title, description, capabilities, and agent name', () => {
     const listings = [
       makeListing({ id: 'a', title: 'Limit order execution' }),
-      makeListing({ id: 'b', agentId: 'agent-0003', title: 'Data analysis', capabilities: ['analytics:run'] }),
+      makeListing({
+        id: 'b',
+        agentId: 'agent-0003',
+        title: 'Data analysis',
+        capabilities: ['analytics:run'],
+      }),
     ];
-    expect(ids(searchMarketplaceListings(listings, agentNames, query({ query: 'trade' }), NOW))).toEqual(['a']);
-    expect(ids(searchMarketplaceListings(listings, agentNames, query({ query: 'analyst' }), NOW))).toEqual(['b']);
+    expect(
+      ids(searchMarketplaceListings(listings, agentNames, query({ query: 'trade' }), NOW)),
+    ).toEqual(['a']);
+    expect(
+      ids(searchMarketplaceListings(listings, agentNames, query({ query: 'analyst' }), NOW)),
+    ).toEqual(['b']);
     expect(
       ids(searchMarketplaceListings(listings, agentNames, query({ query: 'zebra' }), NOW)),
     ).toEqual([]);
   });
 
   it('sorts deterministically with an id tiebreak', () => {
-    const listings = [
-      makeListing({ id: 'b' }),
-      makeListing({ id: 'a' }),
-      makeListing({ id: 'c' }),
-    ];
-    const result = searchMarketplaceListings(listings, agentNames, query({ sortBy: 'name' }), NOW);
+    const listings = [makeListing({ id: 'b' }), makeListing({ id: 'a' }), makeListing({ id: 'c' })];
+    const result = searchMarketplaceListings(
+      listings,
+      agentNames,
+      query({ sortBy: 'name', sortDirection: 'asc' }),
+      NOW,
+    );
     expect(ids(result)).toEqual(['a', 'b', 'c']);
     const reversed = searchMarketplaceListings(
       listings,
@@ -151,14 +155,12 @@ describe('searchMarketplaceListings', () => {
       query({ sortBy: 'name', sortDirection: 'desc' }),
       NOW,
     );
-    // Descending name: same titles tiebreak to ascending id, so order flips.
+    // Descending name: equal titles tiebreak to descending id, so order flips.
     expect(ids(reversed)).toEqual(['c', 'b', 'a']);
   });
 
   it('paginates with accurate totals', () => {
-    const listings = [1, 2, 3, 4, 5].map((index) =>
-      makeListing({ id: `listing-${index}` }),
-    );
+    const listings = [1, 2, 3, 4, 5].map((index) => makeListing({ id: `listing-${index}` }));
     const page = searchMarketplaceListings(
       listings,
       agentNames,

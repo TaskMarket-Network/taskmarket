@@ -30,10 +30,9 @@ function matches(
 ): boolean {
   const requestedCapabilities = query.capabilities ?? [];
   if (requestedCapabilities.length > 0) {
-    for (const key of requestedCapabilities) {
-      if (!listing.capabilities.includes(key)) {
-        return false;
-      }
+    const offered = new Set(listing.capabilities);
+    if (!requestedCapabilities.some((key) => offered.has(key))) {
+      return false;
     }
   }
 
@@ -65,12 +64,7 @@ function matches(
 
   const needle = query.query ?? '';
   if (needle.length > 0) {
-    const haystack = [
-      listing.title,
-      listing.description,
-      agentName,
-      ...listing.capabilities,
-    ]
+    const haystack = [listing.title, listing.description, agentName, ...listing.capabilities]
       .join(' ')
       .toLowerCase();
     if (!haystack.includes(needle.toLowerCase())) {
@@ -120,29 +114,29 @@ function toSearchItem(
 /** Compare two scored listings by the requested sort field and direction. */
 function compareScored(a: ScoredListing, b: ScoredListing, query: MarketplaceSearchQuery): number {
   const direction = query.sortDirection;
-  let comparison: number;
+  let primary: number;
   switch (query.sortBy) {
     case 'relevance':
-      comparison = a.score - b.score;
+      primary = a.score - b.score;
       break;
     case 'updatedAt':
-      comparison = a.item.updatedAt.localeCompare(b.item.updatedAt);
+      primary = a.item.updatedAt.localeCompare(b.item.updatedAt);
       break;
     case 'createdAt':
-      comparison = a.item.createdAt.localeCompare(b.item.createdAt);
+      primary = a.item.createdAt.localeCompare(b.item.createdAt);
       break;
     case 'rating':
-      comparison = a.rating - b.rating;
+      primary = a.rating - b.rating;
       break;
     case 'name':
-      comparison = a.item.title.localeCompare(b.item.title);
+      primary = a.item.title.localeCompare(b.item.title);
       break;
+    default:
+      primary = 0;
   }
-  if (comparison !== 0) {
-    return direction === 'asc' ? comparison : -comparison;
-  }
-  // Deterministic tiebreak: stable id ordering regardless of direction.
-  return a.item.id.localeCompare(b.item.id);
+  // Deterministic tiebreak on stable id ordering.
+  const comparison = primary !== 0 ? primary : a.item.id.localeCompare(b.item.id);
+  return direction === 'asc' ? comparison : -comparison;
 }
 
 /**
@@ -172,9 +166,7 @@ export function searchMarketplaceListings(
   scored.sort((a, b) => compareScored(a, b, query));
 
   const total = scored.length;
-  const items = scored
-    .slice(query.offset, query.offset + query.limit)
-    .map((entry) => entry.item);
+  const items = scored.slice(query.offset, query.offset + query.limit).map((entry) => entry.item);
 
   return {
     contractVersion: MARKETPLACE_CATALOG_SEARCH_API_VERSION,
