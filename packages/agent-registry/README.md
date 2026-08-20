@@ -34,6 +34,12 @@ introduced in a later phase.
   - `PostgresAgentRegistryRepository` — real persistence with **optimistic
     concurrency** (`save(agent, previousVersion)` conflicts on version
     mismatch) and the immutable-field trigger.
+- **Agent Registration API** (`src/api/`): the transport-agnostic external
+  boundary for creating, updating, reading, disabling, and validating agent
+  profiles (Phase 2, step 02-02). `createAgentRegistrationService(repository)`
+  exposes `register`, `update`, `get`, `disable`, and `validate` operations
+  behind a validated request/response envelope, plus generated OpenAPI 3.1
+  documentation. See [Agent Registration API](#agent-registration-api) below.
 - **Migration** (`migrations/001_agent_registry.sql`): the `agents` table with
   `PRIMARY KEY`, `NOT NULL`, `CHECK` constraints (status enum, `version >= 1`,
   non-empty `owner_ref`/`name`), an owner index, and the
@@ -42,8 +48,9 @@ introduced in a later phase.
   `schema_migrations`); run it with `pnpm db:migrate`.
 - **Errors** (`src/errors.ts`): structured `AgentRegistryError` subtypes with
   stable machine-readable codes (`INPUT_INVALID`, `IMMUTABLE_FIELD`,
-  `STATUS_TRANSITION_INVALID`, `DUPLICATE`, `NOT_FOUND`, `VERSION_CONFLICT`,
-  `DATABASE`).
+  `STATUS_TRANSITION`, `DUPLICATE`, `NOT_FOUND`, `VERSION_CONFLICT`,
+  `DATABASE`, `REQUEST_INVALID`, `UNSUPPORTED_VERSION`, `UNAUTHORIZED`,
+  `INTERNAL`, `SCHEMA_UNSUPPORTED`).
 
 ## Usage
 
@@ -76,6 +83,66 @@ const dbRepo = new PostgresAgentRegistryRepository(pool);
 await dbRepo.create(agent);
 ```
 
+## Agent Registration API
+
+`createAgentRegistrationService(repository, options)` is the transport-agnostic
+external boundary for managing agent profiles (mirrors the agent-runtime
+service contract; a physical HTTP/MCP adapter is a later phase). Every request
+is a validated envelope and every call resolves to a structured response
+(never throws):
+
+```ts
+import { createAgentRegistrationService } from '@taskmarket/agent-registry';
+
+const api = createAgentRegistrationService(dbRepo);
+
+const response = await api.handle({
+  contractVersion: '1.0.0',
+  requestId: 'req_001',
+  action: 'register',
+  principal: 'account-42', // authenticated-principal placeholder
+  payload: {
+    ownerRef: 'account-42', // must equal the principal (authorization)
+    name: 'Reference Agent',
+    capabilities: ['agent:meta'],
+  },
+});
+if (response.ok) {
+  // response.agent is the registered profile (version 1, id filled)
+}
+```
+
+Operations:
+
+| Action     | Payload                        | Notes                                                                                                                   |
+| ---------- | ------------------------------ | ----------------------------------------------------------------------------------------------------------------------- |
+| `register` | `registeredAgentInputSchema`   | Creates a profile. Idempotent: replaying an identical profile under the same id + principal returns the stored profile. |
+| `update`   | `{ agentId, version, update }` | Applies mutable-field changes; optimistic concurrency via `version`.                                                    |
+| `get`      | `{ agentId }`                  | Reads a profile owned by the principal (public discovery is a later phase).                                             |
+| `disable`  | `{ agentId, version }`         | Retires the profile (terminal). Idempotent for already-retired agents, but `version` is still enforced.                 |
+| `validate` | `{ candidate }`                | Dry-run validation of a candidate profile; returns the normalized input or `INPUT_INVALID` issues. Never persists.      |
+
+Security posture:
+
+- **Input validation** at the trust boundary: the envelope and every per-action
+  payload are validated with Zod (strict schemas reject unknown/immutable
+  fields); endpoint URLs are restricted to `http(s)` (SSRF guard).
+- **Authorization**: the `principal` must equal the profile `ownerRef` for
+  every operation; unauthorized access returns `AGENT_REGISTRY_UNAUTHORIZED`.
+  The principal is a placeholder for the real authentication/ERC-8004 phase —
+  a transport adapter replaces it with a verified identity. No credentials are
+  ever passed through or logged.
+- **Replay/duplicates**: `register` is idempotent; concurrent `update`/`disable`
+  conflict via optimistic concurrency.
+- **Denial of service**: capability and endpoint arrays are bounded (`max 100`
+  / `max 50`); request ids are URL-safe and bounded.
+- **No secrets**: errors are structured and secret-free; unexpected internal
+  failures are reported as `AGENT_REGISTRY_INTERNAL` without a stack trace.
+
+`api.openapi()` returns a generated **OpenAPI 3.1** document (one POST path per
+action) whose schemas are derived from the same Zod schemas, so the docs never
+drift from the validated contract.
+
 ## Migrations
 
 ```sh
@@ -94,8 +161,9 @@ Domain logic is fully deterministic when a clock and id factories are injected
 (`deps.clock`, `deps.agentIdFactory`, `deps.endpointIdFactory`). Tests cover
 creation, mutable/immutable split, status transitions, input validation
 (including SSRF-guarded URLs and pricing bounds), optimistic version conflicts,
-and the in-memory repository. A PostgreSQL **integration** test
-(`src/postgres.integration.test.ts`) applies the migration in an isolated
+the in-memory repository, and the registration API service (authorization,
+idempotency, concurrency, validate, robustness). A PostgreSQL **integration**
+test (`src/postgres.integration.test.ts`) applies the migration in an isolated
 schema, exercises the repository, and verifies the immutable-field trigger; it
 is skipped automatically when the database is unreachable.
 
@@ -106,5 +174,5 @@ pnpm --filter @taskmarket/agent-registry typecheck
 pnpm test   # runs the whole workspace suite from the repository root
 ```
 
-Registration **API**, capability **discovery**, and the agent **dashboard** are
-intentionally out of scope for this step (Phase 2 steps 02-02, 02-03, 02-04).
+Capability **discovery** and the agent **dashboard** are intentionally out of
+scope for this step (Phase 2 steps 02-03, 02-04).

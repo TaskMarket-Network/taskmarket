@@ -16,8 +16,10 @@ request/response envelopes, auth placeholders, and generated OpenAPI
 documentation). `packages/agent-registry` introduces the off-chain agent
 registry domain model (registered agents, capabilities, endpoints, status,
 pricing, versioning) with a PostgreSQL migration and optimistic-concurrency
-repository. No marketplace, payment, or identity functionality has been
-implemented yet.
+repository, and its transport-agnostic registration API (register, update,
+read, disable, validate agent profiles behind a validated envelope with an
+ownership authorization boundary and generated OpenAPI). No marketplace,
+payment, or identity functionality has been implemented yet.
 
 ## Planned vision
 
@@ -130,9 +132,10 @@ idempotency, health, metrics/log observability, and the service contract
 (envelope schemas, Zod → JSON Schema conversion, OpenAPI generation, and
 end-to-end request/response handling), and the agent registry
 (`packages/agent-registry/src/*.test.ts`): domain logic, input validation,
-status transitions, the in-memory repository, the migration runner, and a
-PostgreSQL integration test (skipped when the database is unreachable). Run
-with `pnpm test`.
+status transitions, the in-memory repository, the registration API service
+(authorization boundary, idempotent create, optimistic concurrency, validate),
+the migration runner, and a PostgreSQL integration test (skipped when the
+database is unreachable). Run with `pnpm test`.
 
 ## Linting and formatting
 

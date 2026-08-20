@@ -240,7 +240,10 @@ Isolated adapter that owns ERC-8004 interaction:
 The off-chain **agent registry domain model** (registered agents, capabilities,
 endpoints, status, pricing, versioning) is implemented in
 `packages/agent-registry` (Phase 2, step 02-01) with a PostgreSQL migration and
-optimistic-concurrency repository. The full indexer/catalog remains planned:
+optimistic-concurrency repository, and the **agent registration API**
+(transport-agnostic register/update/get/disable/validate operations with an
+ownership authorization boundary and generated OpenAPI; Phase 2, step 02-02).
+The full indexer/catalog remains planned:
 
 - An indexer consumes ERC-8004 events (registration, metadata, feedback,
   agentWallet changes) via a subgraph (GOAT documents Sentio) and TaskMarket's

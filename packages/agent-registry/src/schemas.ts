@@ -80,8 +80,8 @@ export const registeredAgentInputSchema = z
     ownerRef: z.string().min(1).max(256),
     name: z.string().min(1).max(256),
     description: z.string().max(2048).default(''),
-    capabilities: z.array(agentCapabilitySchema).min(1),
-    endpoints: z.array(agentEndpointInputSchema).default([]),
+    capabilities: z.array(agentCapabilitySchema).min(1).max(100),
+    endpoints: z.array(agentEndpointInputSchema).max(50).default([]),
     status: agentStatusSchema.default('draft'),
     pricing: agentPricingSchema.optional(),
   })
@@ -96,8 +96,8 @@ export const agentUpdateInputSchema = z
   .object({
     name: z.string().min(1).max(256).optional(),
     description: z.string().max(2048).optional(),
-    capabilities: z.array(agentCapabilitySchema).min(1).optional(),
-    endpoints: z.array(agentEndpointInputSchema).optional(),
+    capabilities: z.array(agentCapabilitySchema).min(1).max(100).optional(),
+    endpoints: z.array(agentEndpointInputSchema).max(50).optional(),
     status: agentStatusSchema.optional(),
     pricing: agentPricingSchema.optional(),
   })
@@ -105,3 +105,23 @@ export const agentUpdateInputSchema = z
   .refine((value) => Object.keys(value).length > 0, {
     message: 'at least one mutable field is required',
   });
+
+/**
+ * The full registered agent as returned by the registration API. Mirrors the
+ * domain model (see `types.ts`); `pricing` is optional.
+ */
+export const registeredAgentSchema = z
+  .object({
+    id: z.string().min(1).max(128),
+    ownerRef: z.string().min(1).max(256),
+    name: z.string().min(1).max(256),
+    description: z.string().max(2048),
+    capabilities: z.array(agentCapabilitySchema).min(1).max(100),
+    endpoints: z.array(agentEndpointSchema).max(50),
+    status: agentStatusSchema,
+    pricing: agentPricingSchema.optional(),
+    version: z.number().int().min(1),
+    createdAt: z.string().min(1),
+    updatedAt: z.string().min(1),
+  })
+  .strict();

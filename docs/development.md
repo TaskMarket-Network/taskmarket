@@ -226,6 +226,13 @@ registry domain model (see the package README for the full API):
 - `AgentRegistryRepository` interface with an in-memory implementation for
   tests and a `PostgresAgentRegistryRepository` with optimistic-concurrency
   `save(agent, previousVersion)`.
+- `createAgentRegistrationService(repository)` — the transport-agnostic agent
+  **registration API** (Phase 2, step 02-02): `register`, `update`, `get`,
+  `disable`, and `validate` operations behind a validated request/response
+  envelope with an ownership authorization boundary (`principal` must match
+  `ownerRef`), idempotent `register`, optimistic-concurrency `update`/`disable`,
+  and generated OpenAPI 3.1 documentation. A physical HTTP/MCP adapter is a
+  later phase.
 - The schema is created by `pnpm db:migrate`
   (`packages/agent-registry/migrations/001_agent_registry.sql`); the database
   rejects changes to immutable fields via a trigger.
