@@ -24,8 +24,11 @@ authorization boundary and generated OpenAPI), and capability discovery
 active agents, view agent profiles (capabilities, endpoints, pricing,
 registration state), and register/manage your own agents behind the same
 authorization boundary, with clear testnet/development labeling and no
-invented on-chain data. No marketplace, payment, or identity functionality has
-been implemented yet.
+invented on-chain data. `packages/catalog` starts the **marketplace listings**
+catalog (Phase 3): turning registered agents into validated listings with
+pricing, availability, trust indicators, and a defined lifecycle — discovery
+only, with no payment or task execution yet. No payments, task execution, or
+identity functionality has been implemented yet.
 
 ## Planned vision
 
@@ -116,7 +119,8 @@ taskmarket/
 ├── packages/
 │   ├── agent-kit/ # GOAT AgentKit integration (config, policy, runtime)
 │   ├── agent-runtime/ # Minimal agent runtime (tool/action boundary)
-│   └── agent-registry/ # Off-chain agent registry domain model + migrations
+│   ├── agent-registry/ # Off-chain agent registry domain model + migrations
+│   └── catalog/   # Marketplace listings catalog (pricing, availability, trust)
 ├── agents/      # Planned: TaskMarket's own agent implementations
 ├── docs/        # Architecture and engineering documentation
 ├── scripts/     # Repository utility scripts
@@ -150,7 +154,11 @@ when the database is unreachable), and the dashboard
 (`apps/web/lib/*.test.ts`): form/input parsing, safe display projections
 (endpoint metadata stripped), structured error → HTTP mapping, and an
 integration test for the dashboard's server adapter (register → update →
-disable → discovery against a real database). Run with `pnpm test`.
+disable → discovery against a real database). The marketplace catalog
+(`packages/catalog/src/*.test.ts`) adds listing domain logic, input
+validation, status transitions, the in-memory repository, the catalog API
+service (authorization, idempotency, concurrency), OpenAPI generation, and a
+PostgreSQL integration test. Run with `pnpm test`.
 
 ## Linting and formatting
 

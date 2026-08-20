@@ -266,6 +266,18 @@ remain planned:
 - The catalog builds search/filtering over capabilities, endpoints, and trust
   signals. It complements, not duplicates, ERC-8004.
 
+The first slice of the **marketplace catalog** is implemented in
+`packages/catalog` (Phase 3, step 03-01): it turns registered agents into
+validated **listings** (service descriptions, capabilities, pricing models,
+availability, self-reported trust indicators) with a defined lifecycle
+(`draft -> published -> paused -> delisted`), an optimistic-concurrency
+Postgres repository with an immutable-field trigger, and the transport-agnostic
+marketplace catalog API (create/update/get/list/publish/pause/delist behind a
+validated envelope with an ownership authorization boundary and generated
+OpenAPI). It is discovery/catalog state only — listings carry pricing metadata
+but never move funds, and no task execution or payment exists yet. Search and
+ranking (03-02) and service offerings (03-03) continue in this package.
+
 ### 4.8 Data stores (planned)
 
 - **PostgreSQL**: off-chain application state (users, accounts, tasks,
@@ -454,8 +466,8 @@ and research §15 for the full threat table).
 
 The workspace is organized to match these boundaries. Phase 1
 (`agent-kit`, `agent-runtime`), Phase 2 steps 02-01/02-02/02-03
-(`agent-registry`), and Phase 2 step 02-04 (`apps/web` registry dashboard) are
-implemented; the rest is planned:
+(`agent-registry`), Phase 2 step 02-04 (`apps/web` registry dashboard), and
+Phase 3 step 03-01 (`catalog` listings) are implemented; the rest is planned:
 
 ```
 taskmarket/
@@ -465,7 +477,7 @@ taskmarket/
 ├── packages/
 │   ├── core/         # Domain logic, types, errors               [4.2]  planned
 │   ├── task-engine/  # Task lifecycle                            [4.3]  planned
-│   ├── catalog/      # Agent catalog + search                    [4.7]  planned
+│   ├── catalog/      # Agent catalog + search                    [4.7]  implemented
 │   ├── adapters/     # Protocol adapters (payment, identity)     [4.5, 4.6, 4.7]  planned
 │   ├── agent-kit/    # Shared AgentKit integration helpers       [4.4]  implemented
 │   ├── agent-runtime/# Minimal agent runtime (tool boundary)     [4.4]  implemented

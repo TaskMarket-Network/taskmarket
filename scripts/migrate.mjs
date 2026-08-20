@@ -8,22 +8,41 @@ import pg from 'pg';
 import { parseEnv } from './check-env.mjs';
 
 const ENV_PATH = new URL('../.env', import.meta.url);
-const MIGRATIONS_DIR = new URL('../packages/agent-registry/migrations/', import.meta.url);
+const PACKAGES_DIR = new URL('../packages/', import.meta.url);
 
-/** Migration SQL files, sorted in application order. */
-export function listMigrationFiles(dir = MIGRATIONS_DIR) {
-  if (!existsSync(dir)) {
-    return [];
+/**
+ * Migration SQL files across all packages, sorted in application order. Each
+ * entry is `{ version, dir, file }` where `version` is the package-relative
+ * path (e.g. `agent-registry/001_agent_registry.sql`).
+ */
+export function listMigrationFiles() {
+  const migrations = [];
+  for (const entry of readdirSync(PACKAGES_DIR, { withFileTypes: true })) {
+    if (!entry.isDirectory()) {
+      continue;
+    }
+    const dir = new URL(`${entry.name}/migrations/`, PACKAGES_DIR);
+    if (!existsSync(dir)) {
+      continue;
+    }
+    for (const file of readdirSync(dir)
+      .filter((name) => name.endsWith('.sql'))
+      .sort()) {
+      migrations.push({ version: `${entry.name}/${file}`, dir, file });
+    }
   }
-  return readdirSync(dir)
-    .filter((file) => file.endsWith('.sql'))
-    .sort();
+  migrations.sort((a, b) => a.version.localeCompare(b.version));
+  return migrations;
 }
 
-/** Migration files that have not yet been applied. */
+/**
+ * Migration entries that have not yet been applied. Matches against the
+ * package-relative version and the legacy basename, so migrations recorded
+ * before multi-package scanning are not re-run.
+ */
 export function pendingMigrations(appliedVersions, files) {
   const applied = new Set(appliedVersions);
-  return files.filter((file) => !applied.has(file));
+  return files.filter((entry) => !applied.has(entry.version) && !applied.has(entry.file));
 }
 
 function loadEnv() {
@@ -41,7 +60,7 @@ async function main() {
 
   const files = listMigrationFiles();
   if (files.length === 0) {
-    console.error('[migrate] no migration files found under packages/agent-registry/migrations.');
+    console.error('[migrate] no migration files found under packages/*/migrations.');
     process.exit(1);
   }
 
@@ -66,14 +85,14 @@ async function main() {
       return;
     }
 
-    for (const file of pending) {
-      const sql = readFileSync(new URL(file, MIGRATIONS_DIR), 'utf8');
+    for (const entry of pending) {
+      const sql = readFileSync(new URL(entry.file, entry.dir), 'utf8');
       await client.query('begin');
       try {
         await client.query(sql);
-        await client.query('insert into schema_migrations (version) values ($1)', [file]);
+        await client.query('insert into schema_migrations (version) values ($1)', [entry.version]);
         await client.query('commit');
-        console.log(`[migrate] applied ${file}`);
+        console.log(`[migrate] applied ${entry.version}`);
       } catch (error) {
         await client.query('rollback');
         throw error;

@@ -88,9 +88,10 @@ reporting success.
 
 PostgreSQL and Redis run locally via Docker Compose (see
 [docker-compose.dev.yml](../docker-compose.dev.yml)). PostgreSQL is consumed by
-the agent registry (migrations, persistence) and the `apps/web` dashboard;
-Redis is provisioned but not yet consumed by application code — it will back
-idempotency, queues, and rate limiting in later phases (ADR-0005).
+the agent registry (migrations, persistence), the marketplace catalog
+(migrations, persistence), and the `apps/web` dashboard; Redis is provisioned
+but not yet consumed by application code — it will back idempotency, queues,
+and rate limiting in later phases (ADR-0005).
 
 | Command         | Purpose                                                                        |
 | --------------- | ------------------------------------------------------------------------------ |
@@ -116,9 +117,14 @@ pnpm db:migrate   # apply pending migrations (idempotent)
 
 `db:migrate` reads `DATABASE_URL` from `.env` (falling back to the safe local
 development default) and applies each pending migration in a transaction. The
+runner scans `packages/*/migrations/`, records each applied migration by its
+package-relative version in `schema_migrations`, and matches legacy
+basename-only records so previously applied migrations are never re-run. The
 first migration (`packages/agent-registry/migrations/001_agent_registry.sql`)
 creates the off-chain `agents` table (agent registry domain model) with primary
-key, check constraints, and an immutable-field trigger.
+key, check constraints, and an immutable-field trigger; the second
+(`packages/catalog/migrations/001_marketplace_catalog.sql`) creates the
+`listings` table (marketplace catalog) with its own immutable-field trigger.
 
 ## Daily workflow
 
@@ -255,6 +261,39 @@ Environment variables (safe defaults in `.env.example`):
 The registry is **off-chain catalog state only** and is not ERC-8004 identity;
 protocol identity is introduced in a later phase.
 
+## Marketplace catalog (`@taskmarket/catalog`)
+
+Phase 3, step 03-01 introduces `packages/catalog`, TaskMarket's off-chain
+marketplace catalog (see the package README for the full API):
+
+- `MarketplaceListing` entity with **immutable** fields (`id`, `ownerRef`,
+  `agentId`, `createdAt`) and **mutable** fields (`title`, `description`,
+  `capabilities`, `pricing`, `availability`, `trustIndicators`, `status`);
+  `version` increments on every update.
+- `createMarketplaceListing(input)` / `applyListingUpdate(listing, input)`
+  validate all input at the trust boundary (Zod) and enforce the listing status
+  machine (`draft -> published -> paused -> delisted`). Capabilities must be a
+  **subset** of the referenced agent's declared capabilities; pricing is
+  metadata only (never used to move funds); trust indicators are explicitly
+  self-reported (display signals, never evidence).
+- `CatalogRepository` interface with an in-memory implementation for tests and
+  a `PostgresCatalogRepository` with optimistic-concurrency
+  `save(listing, previousVersion)`.
+- `createMarketplaceCatalogService(repository, agentRepository)` — the
+  transport-agnostic **marketplace catalog API** (Phase 3, step 03-01):
+  `create`, `update`, `get`, `list`, `publish`, `pause`, and `delist`
+  operations behind a validated request/response envelope with an ownership
+  authorization boundary (`principal` must match `ownerRef`), idempotent
+  `create`, optimistic-concurrency updates, agent existence (`AGENT_UNKNOWN`)
+  and active-status (`AGENT_INACTIVE`) checks on publish, and generated
+  OpenAPI 3.1 documentation. The marketplace UI in `apps/web` is the HTTP
+  adapter for this contract (Phase 3, step 03-04).
+- The schema is created by `pnpm db:migrate`
+  (`packages/catalog/migrations/001_marketplace_catalog.sql`); the database
+  rejects changes to immutable fields via a trigger.
+
+Search/ranking (03-02) and service offerings (03-03) continue in this package.
+
 ## Agent registry dashboard (`apps/web`)
 
 Phase 2, step 02-04 introduces `apps/web`, a **Next.js (App Router)**
@@ -317,7 +356,8 @@ taskmarket/
 ├── packages/
 │   ├── agent-kit/ # GOAT AgentKit integration (config, policy, runtime)
 │   ├── agent-runtime/ # Minimal agent runtime (tool/action boundary)
-│   └── agent-registry/ # Off-chain agent registry domain model + migrations
+│   ├── agent-registry/ # Off-chain agent registry domain model + migrations
+│   └── catalog/   # Marketplace listings catalog (pricing, availability, trust)
 ├── agents/      # Planned: TaskMarket's own agent implementations
 ├── docs/        # Architecture, ADRs, and engineering documentation
 ├── scripts/     # Repository utility scripts
