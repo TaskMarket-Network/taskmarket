@@ -51,6 +51,8 @@ jobs:
       - name: Run tests
         run: pnpm test
 
-      # No build step yet: the initialization phase has no compiled application
-      # source. Per-package build commands will be added when the first
-      # application or library package is introduced.
+      - name: Type check the web dashboard
+        run: pnpm --filter @taskmarket/web typecheck
+
+      - name: Build the web dashboard
+        run: pnpm --filter @taskmarket/web build

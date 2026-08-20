@@ -280,6 +280,13 @@ dashboard for browsing and managing registered agents:
   authorization still happens in the service. Structured errors map to HTTP
   statuses (400/403/404/409/422/500) and internal/database messages never leak
   to clients.
+- **Rate limiting**: the dashboard HTTP adapter has none yet (development-only
+  surface). Redis-backed rate limits and per-account quotas are planned for the
+  public API phase (ADR-0005).
+- **Discovery performance**: capability search currently filters and ranks the
+  full `agents` table in memory (`listAll`), which is correct at registry scale
+  but is deliberately not indexed yet. A later phase adds a partial index for
+  `status = 'active'` and JSONB GIN indexes for capability lookup.
 - **Development labeling**: a banner marks the build as development / GOAT
   Testnet and states that on-chain identity (ERC-8004) and payments are not
   active; pages never invent on-chain data.
@@ -298,7 +305,8 @@ pnpm --filter @taskmarket/web build
 
 `pnpm test` from the root also runs the dashboard's unit tests
 (`apps/web/lib/*.test.ts`) and its server-adapter integration test (skipped
-when the database is unreachable).
+when the database is unreachable). CI additionally type-checks and builds
+`apps/web` (the root `pnpm typecheck` only covers `packages/` and `tests/`).
 
 ## Project structure
 
