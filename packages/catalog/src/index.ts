@@ -59,6 +59,32 @@ export {
   type MarketplaceCatalogUpdatePayload,
 } from './catalog/index.js';
 
+export {
+  buildMarketplaceCatalogSearchOpenApi,
+  createMarketplaceCatalogSearchService,
+  MARKETPLACE_CATALOG_SEARCH_API_SUPPORTED_VERSIONS,
+  MARKETPLACE_CATALOG_SEARCH_API_VERSION,
+  MARKETPLACE_SEARCH_FRESHNESS_WINDOW_MS,
+  MARKETPLACE_SEARCH_WEIGHTS,
+  scoreListing,
+  searchMarketplaceListings,
+  type MarketplaceCatalogSearchApiContractVersion,
+  type MarketplaceCatalogSearchOpenApiDocument,
+  type MarketplaceCatalogSearchOpenApiOptions,
+  type MarketplaceCatalogSearchOptions,
+  type MarketplaceCatalogSearchService,
+  type MarketplaceSearchError,
+  type MarketplaceSearchItem,
+  type MarketplaceSearchParseResult,
+  type MarketplaceSearchQuery,
+  type MarketplaceSearchRanking,
+  type MarketplaceSearchResponse,
+  type MarketplaceSearchResult,
+  type MarketplaceSearchSignal,
+  type MarketplaceSearchSortBy,
+  type MarketplaceSearchSortDirection,
+} from './search/index.js';
+
 export type {
   ListingAvailability,
   ListingPricing,
