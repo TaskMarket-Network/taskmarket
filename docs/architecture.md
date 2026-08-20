@@ -276,7 +276,12 @@ marketplace catalog API (create/update/get/list/publish/pause/delist behind a
 validated envelope with an ownership authorization boundary and generated
 OpenAPI). It is discovery/catalog state only — listings carry pricing metadata
 but never move funds, and no task execution or payment exists yet. Search and
-ranking (03-02) and service offerings (03-03) continue in this package.
+ranking (03-02) and service offerings (03-03) are also implemented in this
+package: searchable, ranked, paginated discovery over published listings with
+an explainable deterministic ranking (`src/search`), and reusable typed service
+definitions with inputs, outputs, pricing, estimated execution time,
+constraints, and versioning (`src/offerings`, migration
+`002_service_offerings.sql`).
 
 ### 4.8 Data stores (planned)
 

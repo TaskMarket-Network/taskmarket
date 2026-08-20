@@ -61,6 +61,18 @@ the agent's declared capabilities.
   `STATUS_TRANSITION`, `DUPLICATE`, `NOT_FOUND`, `VERSION_CONFLICT`,
   `DATABASE`, `REQUEST_INVALID`, `UNSUPPORTED_VERSION`, `UNAUTHORIZED`,
   `INTERNAL`, `SCHEMA_UNSUPPORTED`, `AGENT_UNKNOWN`, `AGENT_INACTIVE`).
+- **Service offerings** (`src/offerings/`, Phase 3, step 03-03): reusable,
+  typed service definitions an agent offers — `name`/`description`,
+  capabilities (a subset of the agent's declared capabilities), typed
+  `inputs`/`outputs`, `pricing`, `estimatedExecutionTime` (average/max ms),
+  `constraints` (timeout, concurrency, input size), and a lifecycle
+  (`active <-> archived`) with optimistic-concurrency versioning. Includes an
+  in-memory and a Postgres repository (`002_service_offerings.sql` migration
+  with an immutable-field trigger), and a transport-agnostic offerings API
+  (`create | update | get | list | archive | activate`) behind the same
+  validated envelope with an ownership authorization boundary, idempotent
+  create, and generated OpenAPI. See
+  [Service Offerings](#service-offerings) below.
 
 ## Usage
 
@@ -149,14 +161,49 @@ Security posture:
 action) whose schemas are derived from the same Zod schemas, so the docs never
 drift from the validated contract.
 
+## Service Offerings
+
+Phase 3, step 03-03 introduces **service offerings** (`src/offerings/`):
+reusable, typed service definitions an agent offers on the marketplace. Where a
+listing describes _what_ an agent offers for discovery, an offering describes
+_how_ the service is invoked.
+
+- **Domain model** (`src/offerings/types.ts`): the `ServiceOffering` entity
+  with immutable fields (`id`, `ownerRef`, `agentId`, `createdAt`) and mutable
+  fields (`name`, `description`, `capabilities`, `inputs`, `outputs`,
+  `pricing`, `estimatedExecutionTime`, `constraints`, `status`); `version`
+  increments on every update and `updatedAt` is bumped with it.
+- **Input validation** (`src/offerings/schemas.ts`): Zod schemas validate
+  every external input at the trust boundary. `inputs`/`outputs` are typed
+  (name + type + description, inputs may be `required`), pricing reuses the
+  listing pricing metadata, `estimatedExecutionTime` bounds `averageMs`/`maxMs`
+  (max ≥ average), and `constraints` cap timeout/concurrency/input size.
+- **Domain logic** (`src/offerings/domain.ts`): `createServiceOffering` and
+  `applyServiceOfferingUpdate` with the `active <-> archived` lifecycle.
+- **Repositories** (`src/offerings/repository.ts`, `src/offerings/postgres.ts`):
+  `InMemoryServiceOfferingRepository` for tests and
+  `PostgresServiceOfferingRepository` with optimistic concurrency; the
+  `002_service_offerings.sql` migration creates the `service_offerings` table
+  with an immutable-field trigger.
+- **Offerings API** (`src/offerings/service.ts`):
+  `createServiceOfferingService(repository, agentRepository)` exposes
+  `handle(request)` behind a validated request/response envelope (actions
+  `create | update | get | list | archive | activate`) plus generated OpenAPI
+  3.1 documentation. Every operation enforces the ownership authorization
+  boundary (`principal` must match `ownerRef`), create is idempotent, updates
+  are optimistic-concurrency, and offering capabilities must be a subset of the
+  referenced agent's declared capabilities.
+- **Migration** (`migrations/002_service_offerings.sql`): applied by
+  `pnpm db:migrate`; rejects immutable-field changes at the database boundary.
+
 ## Search, ranking, and service offerings
 
 Phase 3 continues in this package: marketplace **search, filtering, sorting,
 pagination, and explainable deterministic ranking** (step 03-02) and **service
 offerings** — reusable service definitions with inputs, outputs, pricing,
-estimated execution time, constraints, and versioning (step 03-03). The public
-marketplace UI (discovery, service details, agent profiles, trust indicators)
-is built in `apps/web` (step 03-04).
+estimated execution time, constraints, and versioning (step 03-03) are both
+implemented. The public marketplace UI (discovery, service details, agent
+profiles, trust indicators) is built in `apps/web` (step 03-04).
 
 ## Migrations
 
@@ -176,10 +223,12 @@ Domain logic is fully deterministic when a clock and an id factory are injected
 mutable/immutable split, status transitions, input validation, optimistic
 version conflicts, the in-memory repository, the catalog API service
 (authorization, idempotency, concurrency, robustness), and OpenAPI generation.
-A PostgreSQL **integration** test (`src/postgres.integration.test.ts`) applies
-both the agent-registry and catalog migrations in an isolated schema, exercises
-the repository, and verifies the immutable-field trigger; it is skipped
-automatically when the database is unreachable.
+The same coverage exists for service offerings (`src/offerings/*.test.ts`).
+PostgreSQL **integration** tests (`src/postgres.integration.test.ts` and
+`src/offerings/postgres.integration.test.ts`) apply the agent-registry, catalog,
+and offerings migrations in an isolated schema, exercise the repositories, and
+verify the immutable-field triggers; they are skipped automatically when the
+database is unreachable.
 
 ## Development
 

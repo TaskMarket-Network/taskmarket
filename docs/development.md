@@ -292,7 +292,27 @@ marketplace catalog (see the package README for the full API):
   (`packages/catalog/migrations/001_marketplace_catalog.sql`); the database
   rejects changes to immutable fields via a trigger.
 
-Search/ranking (03-02) and service offerings (03-03) continue in this package.
+Search/ranking (03-02) and service offerings (03-03) continue in this package:
+
+- **Search/ranking** (`src/search/`, 03-02): `searchMarketplaceListings` and
+  `scoreListing` filter only `published` listings by capabilities (any-match,
+  partial matches rank lower), namespaces, agent, availability, pricing
+  currency, and free text, with deterministic sort (direction-aware id
+  tiebreak), pagination, and an **explainable, deterministic ranking** built
+  from fixed documented weights (price excluded; self-reported trust
+  down-weighted). `createMarketplaceCatalogSearchService(repository,
+agentRepository)` exposes the search behind a validated envelope with a safe
+  projection and generated OpenAPI.
+- **Service offerings** (`src/offerings/`, 03-03): reusable, typed service
+  definitions (`name`, `description`, `capabilities`, `inputs`/`outputs`,
+  `pricing`, `estimatedExecutionTime`, `constraints`, lifecycle
+  `active <-> archived`) with optimistic-concurrency versioning and an
+  immutable-field trigger
+  (`packages/catalog/migrations/002_service_offerings.sql`).
+  `createServiceOfferingService(repository, agentRepository)` exposes
+  `create | update | get | list | archive | activate` behind the same
+  validated envelope with an ownership authorization boundary, idempotent
+  create, capability-subset checks, and generated OpenAPI.
 
 ## Agent registry dashboard (`apps/web`)
 
