@@ -1,0 +1,28 @@
+{
+  "name": "@taskmarket/core",
+  "version": "0.0.0",
+  "description": "TaskMarket's shared domain logic, types, and errors used by the API core and all packages.",
+  "private": true,
+  "type": "module",
+  "main": "src/index.ts",
+  "types": "src/index.ts",
+  "exports": {
+    ".": {
+      "types": "./src/index.ts",
+      "default": "./src/index.ts"
+    }
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@taskmarket/agent-registry": "workspace:*",
+    "@taskmarket/catalog": "workspace:*",
+    "pg": "^8.16.0",
+    "zod": "^3.24.2"
+  },
+  "devDependencies": {
+    "@types/pg": "^8.15.0",
+    "typescript": "^5.9.3"
+  }
+}
