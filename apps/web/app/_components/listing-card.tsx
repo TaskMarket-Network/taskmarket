@@ -29,8 +29,8 @@ export function ListingCard({ listing }: { readonly listing: DisplayListingSearc
           </span>
         ))}
       </p>
-      {primaryPricing !== null ? (
-        <p className="meta">Pricing: {toDisplayPricing(primaryPricing).label}</p>
+      {primaryPricing ? (
+        <p className="meta">Pricing: {toDisplayPricing(primaryPricing!).label}</p>
       ) : null}
       {listing.trust !== null ? (
         <p className="meta">
