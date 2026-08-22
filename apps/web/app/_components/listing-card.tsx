@@ -8,8 +8,7 @@ import {
 import { AvailabilityBadge } from './catalog-badges';
 
 export function ListingCard({ listing }: { readonly listing: DisplayListingSearchItem }) {
-  const primaryPricing =
-    listing.pricing.length > 0 ? listing.pricing[0] : null;
+  const primaryPricing = listing.pricing.length > 0 ? listing.pricing[0] : null;
   return (
     <li className="card listing-card">
       <h2>
@@ -34,7 +33,8 @@ export function ListingCard({ listing }: { readonly listing: DisplayListingSearc
       ) : null}
       {listing.trust !== null ? (
         <p className="meta">
-          Self-reported: {listing.trust.rating !== undefined ? `★ ${listing.trust.rating}` : 'no rating'} ·{' '}
+          Self-reported:{' '}
+          {listing.trust.rating !== undefined ? `★ ${listing.trust.rating}` : 'no rating'} ·{' '}
           {listing.trust.completionRate !== undefined
             ? `${listing.trust.completionRate}% completion`
             : 'no completion rate'}

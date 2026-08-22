@@ -30,7 +30,9 @@ function baseCatalogRequest(
   };
 }
 
-export function buildCreateListingRequest(input: MarketplaceListingInput): MarketplaceCatalogRequest {
+export function buildCreateListingRequest(
+  input: MarketplaceListingInput,
+): MarketplaceCatalogRequest {
   const principal = getDashboardPrincipal();
   const request = baseCatalogRequest('create', principal);
   request.payload = { input: { ...input, ownerRef: principal } };

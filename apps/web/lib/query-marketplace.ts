@@ -1,7 +1,4 @@
-import type {
-  MarketplaceSearchSortBy,
-  MarketplaceSearchSortDirection,
-} from '@taskmarket/catalog';
+import type { MarketplaceSearchSortBy, MarketplaceSearchSortDirection } from '@taskmarket/catalog';
 
 import type { SearchParamValue } from './query';
 import { singleParam, splitCsv } from './query';
@@ -79,9 +76,7 @@ export function parseMarketplaceOffset(value: SearchParamValue): number {
   return clampInt(value, 0, 10_000, 0);
 }
 
-export function toMarketplaceQuery(
-  params: Record<string, SearchParamValue>,
-): MarketplaceQuery {
+export function toMarketplaceQuery(params: Record<string, SearchParamValue>): MarketplaceQuery {
   return {
     query: singleParam(params.q),
     capabilities: splitCsv(params.capabilities),

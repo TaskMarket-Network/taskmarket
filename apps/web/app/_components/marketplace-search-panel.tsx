@@ -3,10 +3,7 @@
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 
-import {
-  buildMarketplaceHref,
-  type MarketplaceQuery,
-} from '../../lib/query-marketplace';
+import { buildMarketplaceHref, type MarketplaceQuery } from '../../lib/query-marketplace';
 
 export interface MarketplaceSearchPanelProps {
   readonly current: MarketplaceQuery;

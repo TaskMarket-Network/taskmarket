@@ -75,7 +75,12 @@ describe('buildMarketplaceHref', () => {
 
   it('omits default sort/direction values', () => {
     expect(
-      buildMarketplaceHref({ sortBy: 'relevance', sortDirection: 'desc', limit: '20', offset: '0' }),
+      buildMarketplaceHref({
+        sortBy: 'relevance',
+        sortDirection: 'desc',
+        limit: '20',
+        offset: '0',
+      }),
     ).toBe('/marketplace');
   });
 });

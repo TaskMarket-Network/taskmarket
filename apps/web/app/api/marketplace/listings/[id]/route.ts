@@ -1,10 +1,11 @@
 import { NextResponse } from 'next/server';
 
-import {
-  buildUpdateListingRequest,
-} from '../../../../../lib/server/catalog-envelopes';
+import { buildUpdateListingRequest } from '../../../../../lib/server/catalog-envelopes';
 import { getCatalogServices } from '../../../../../lib/server/catalog';
-import { catalogHttpStatusForErrorCode, toCatalogHttpErrorBody } from '../../../../../lib/http-catalog';
+import {
+  catalogHttpStatusForErrorCode,
+  toCatalogHttpErrorBody,
+} from '../../../../../lib/http-catalog';
 import { toDisplayListing } from '../../../../../lib/display-catalog';
 import { buildUpdateListingInput, type EditListingForm } from '../../../../../lib/validate-catalog';
 import { getDashboardPrincipal } from '../../../../../lib/env';
@@ -95,7 +96,9 @@ export async function PATCH(
   }
 
   const { catalog } = getCatalogServices();
-  const response = await catalog.handle(buildUpdateListingRequest(id, body.version as number, parsed.update));
+  const response = await catalog.handle(
+    buildUpdateListingRequest(id, body.version as number, parsed.update),
+  );
   if (!response.ok) {
     return NextResponse.json(toCatalogHttpErrorBody(response.error), {
       status: catalogHttpStatusForErrorCode(response.error.code),

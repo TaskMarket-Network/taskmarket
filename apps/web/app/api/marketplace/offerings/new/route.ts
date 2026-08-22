@@ -1,7 +1,10 @@
 import { NextResponse } from 'next/server';
 
 import { getCatalogServices } from '../../../../../lib/server/catalog';
-import { catalogHttpStatusForErrorCode, toCatalogHttpErrorBody } from '../../../../../lib/http-catalog';
+import {
+  catalogHttpStatusForErrorCode,
+  toCatalogHttpErrorBody,
+} from '../../../../../lib/http-catalog';
 import { toDisplayOffering } from '../../../../../lib/display-catalog';
 import {
   buildCreateOfferingInput,

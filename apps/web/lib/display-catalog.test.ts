@@ -65,9 +65,7 @@ describe('display-catalog projections', () => {
       updatedAt: '2023-01-02T00:00:00.000Z',
       ranking: {
         score: 5.7,
-        signals: [
-          { name: 'freshness', value: 1, weight: 1, contribution: 1 },
-        ],
+        signals: [{ name: 'freshness', value: 1, weight: 1, contribution: 1 }],
         explanation: 'score 5.70: ...',
       },
     };
@@ -124,8 +122,10 @@ describe('display-catalog projections', () => {
   });
 
   it('projects availability including the note', () => {
-    expect(
-      toDisplayAvailability({ status: 'limited', note: 'Peak hours only' }),
-    ).toMatchObject({ status: 'limited', statusLabel: 'Limited', note: 'Peak hours only' });
+    expect(toDisplayAvailability({ status: 'limited', note: 'Peak hours only' })).toMatchObject({
+      status: 'limited',
+      statusLabel: 'Limited',
+      note: 'Peak hours only',
+    });
   });
 });

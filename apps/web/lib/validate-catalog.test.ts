@@ -55,11 +55,17 @@ describe('buildCreateListingInput', () => {
 
 describe('buildUpdateListingInput', () => {
   it('builds a partial update and requires a change', () => {
-    const result = buildUpdateListingInput({ title: 'Renamed', description: '', capabilities: '', availability: '' });
+    const result = buildUpdateListingInput({
+      title: 'Renamed',
+      description: '',
+      capabilities: '',
+      availability: '',
+    });
     expect(result.update).toEqual({ title: 'Renamed' });
-    expect(buildUpdateListingInput({ title: '', description: '', capabilities: '', availability: '' }).issues).toContain(
-      'At least one field must change.',
-    );
+    expect(
+      buildUpdateListingInput({ title: '', description: '', capabilities: '', availability: '' })
+        .issues,
+    ).toContain('At least one field must change.');
   });
 });
 
@@ -116,10 +122,22 @@ describe('buildCreateOfferingInput', () => {
 
 describe('buildUpdateOfferingInput', () => {
   it('builds a partial update and requires a change', () => {
-    const result = buildUpdateOfferingInput({ name: 'Renamed', description: '', capabilities: '', inputs: '', outputs: '' });
+    const result = buildUpdateOfferingInput({
+      name: 'Renamed',
+      description: '',
+      capabilities: '',
+      inputs: '',
+      outputs: '',
+    });
     expect(result.update).toEqual({ name: 'Renamed' });
     expect(
-      buildUpdateOfferingInput({ name: '', description: '', capabilities: '', inputs: '', outputs: '' }).issues,
+      buildUpdateOfferingInput({
+        name: '',
+        description: '',
+        capabilities: '',
+        inputs: '',
+        outputs: '',
+      }).issues,
     ).toContain('At least one field must change.');
   });
 });

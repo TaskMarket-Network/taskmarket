@@ -288,7 +288,8 @@ export function formatDuration(ms: number): string {
 
 /** Format a unit value, trimming trailing zeros for whole values. */
 function formatCompact(value: number, unit: string): string {
-  const text = value >= 10 ? value.toFixed(0) : Number.isInteger(value) ? String(value) : value.toFixed(1);
+  const text =
+    value >= 10 ? value.toFixed(0) : Number.isInteger(value) ? String(value) : value.toFixed(1);
   return `${text} ${unit}`;
 }
 

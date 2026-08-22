@@ -45,7 +45,12 @@ export function parseAvailabilityStatus(raw: string): ListingAvailability['statu
     : null;
 }
 
-function optionalDecimal(raw: string, max: number, field: string, issues: string[]): string | undefined {
+function optionalDecimal(
+  raw: string,
+  max: number,
+  field: string,
+  issues: string[],
+): string | undefined {
   const value = raw.trim();
   if (value.length === 0) {
     return undefined;
@@ -213,7 +218,10 @@ export interface CreateOfferingForm {
 }
 
 /** Parse "name:type" lines into typed parameters (description ignored here). */
-export function parseIoParams(raw: string, field: string): {
+export function parseIoParams(
+  raw: string,
+  field: string,
+): {
   readonly params: { name: string; type: string; required: boolean }[];
   readonly issues: readonly string[];
 } {

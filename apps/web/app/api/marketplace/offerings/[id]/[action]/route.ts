@@ -1,7 +1,10 @@
 import { NextResponse } from 'next/server';
 
 import { getCatalogServices } from '../../../../../../lib/server/catalog';
-import { catalogHttpStatusForErrorCode, toCatalogHttpErrorBody } from '../../../../../../lib/http-catalog';
+import {
+  catalogHttpStatusForErrorCode,
+  toCatalogHttpErrorBody,
+} from '../../../../../../lib/http-catalog';
 import { toDisplayOffering } from '../../../../../../lib/display-catalog';
 import { MARKETPLACE_CATALOG_ERROR_CODES } from '@taskmarket/catalog';
 import { buildOfferingLifecycleRequest } from '../../../../../../lib/server/catalog-envelopes';

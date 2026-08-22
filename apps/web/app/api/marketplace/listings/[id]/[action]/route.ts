@@ -2,7 +2,10 @@ import { NextResponse } from 'next/server';
 
 import { buildListingLifecycleRequest } from '../../../../../../lib/server/catalog-envelopes';
 import { getCatalogServices } from '../../../../../../lib/server/catalog';
-import { catalogHttpStatusForErrorCode, toCatalogHttpErrorBody } from '../../../../../../lib/http-catalog';
+import {
+  catalogHttpStatusForErrorCode,
+  toCatalogHttpErrorBody,
+} from '../../../../../../lib/http-catalog';
 import { toDisplayListing } from '../../../../../../lib/display-catalog';
 import { MARKETPLACE_CATALOG_ERROR_CODES } from '@taskmarket/catalog';
 
@@ -41,7 +44,11 @@ export async function POST(
 
   const { catalog } = getCatalogServices();
   const response = await catalog.handle(
-    buildListingLifecycleRequest(action as 'publish' | 'pause' | 'delist', id, body.version as number),
+    buildListingLifecycleRequest(
+      action as 'publish' | 'pause' | 'delist',
+      id,
+      body.version as number,
+    ),
   );
   if (!response.ok) {
     return NextResponse.json(toCatalogHttpErrorBody(response.error), {

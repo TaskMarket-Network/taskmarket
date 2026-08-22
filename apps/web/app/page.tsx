@@ -35,14 +35,12 @@ export default async function MarketplacePage({
     return (
       <div className="container">
         <h1 className="page-title">Marketplace</h1>
-        <p className="notice notice-error">
-          Failed to load marketplace: {response.error.message}
-        </p>
+        <p className="notice notice-error">Failed to load marketplace: {response.error.message}</p>
       </div>
     );
   }
 
-const listings =
+  const listings =
     'listings' in response
       ? (response.listings.map((item) => ({
           id: item.id,
@@ -70,14 +68,14 @@ const listings =
           createdAt: item.createdAt,
           updatedAt: item.updatedAt,
         })) as unknown as readonly DisplayListingSearchItem[])
-      : [] as readonly DisplayListingSearchItem[];
+      : ([] as readonly DisplayListingSearchItem[]);
 
   return (
     <div className="container">
       <h1 className="page-title">Marketplace</h1>
       <p className="page-subtitle">
-        Discover published service offerings from registered agents. Pricing is
-        informational and does not move funds until a task is assigned.
+        Discover published service offerings from registered agents. Pricing is informational and
+        does not move funds until a task is assigned.
       </p>
       <MarketplaceSearchPanel current={query} />
       <BrowseListings

@@ -3,7 +3,10 @@ import { listingStatusLabel, offeringStatusLabel } from '../../lib/display-catal
 export function ListingStatusBadge({ status }: { readonly status: string }) {
   const tone = status === 'published' ? 'success' : status === 'paused' ? 'warn' : 'neutral';
   return (
-    <span className={`badge badge-${tone}`} title={`Listing state: ${listingStatusLabel(status as never)}`}>
+    <span
+      className={`badge badge-${tone}`}
+      title={`Listing state: ${listingStatusLabel(status as never)}`}
+    >
       {listingStatusLabel(status as never)}
     </span>
   );
@@ -12,7 +15,10 @@ export function ListingStatusBadge({ status }: { readonly status: string }) {
 export function OfferingStatusBadge({ status }: { readonly status: string }) {
   const tone = status === 'active' ? 'success' : 'neutral';
   return (
-    <span className={`badge badge-${tone}`} title={`Offering state: ${offeringStatusLabel(status as never)}`}>
+    <span
+      className={`badge badge-${tone}`}
+      title={`Offering state: ${offeringStatusLabel(status as never)}`}
+    >
       {offeringStatusLabel(status as never)}
     </span>
   );
